@@ -7,11 +7,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [v0.1.0] - 2026-11-24
-
-Initial release of `jsonwire`, a ProtoJSON implementation built on `encoding/json/jsontext` for
-Go 1.27 and newer.
-
 ### Added
 
 - Streaming APIs following [golang/protobuf#1673](https://github.com/golang/protobuf/issues/1673):
@@ -23,6 +18,3 @@ Go 1.27 and newer.
   `Empty`, and wrapper types).
 - Compact, deterministic JSON output and full compatibility with the protobuf conformance test
   suite.
-
-[Unreleased]: https://github.com/protolayer/jsonwire/compare/v0.1.0...HEAD
-[v0.1.0]: https://github.com/protolayer/jsonwire/releases/tag/v0.1.0
