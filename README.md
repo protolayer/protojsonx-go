@@ -57,7 +57,7 @@ b, err := json.Marshal(v, opts)
 err = json.Unmarshal(b, &v, opts)
 ```
 
-[Run a complete example on the Go Playground](https://go.dev/play/p/NS6YM8QWi5P).
+[Run a complete example on the Go Playground](https://go.dev/play/p/W898nySBBM8).
 
 For `encoding/json` v1 compatibility, or to avoid passing options on each call, implement `MarshalJSONTo` and `UnmarshalJSONFrom` on your message types:
 
