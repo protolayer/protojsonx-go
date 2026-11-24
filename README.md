@@ -42,7 +42,7 @@ var out structpb.Struct
 err = jsonwire.Unmarshal(b, &out)
 ```
 
-[Run a complete example on the Go Playground](https://go.dev/play/p/vqkHbPGN3So).
+[Run a complete example on the Go Playground](https://go.dev/play/p/YzaCMMdyBo9).
 
 To stream a protobuf message inside a Go struct with `encoding/json` (v1 or v2):
 
