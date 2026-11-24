@@ -206,7 +206,6 @@ func (d decoder) unmarshalAny(m protoreflect.Message) error {
 	// One sub-decoder reads raw two times: first to find the type, then to
 	// decode the fields.
 	sub := d.subDecoder(raw)
-	defer putDecoder(sub.dec)
 	typeURL, err := findTypeURL(sub)
 	switch {
 	case errors.Is(err, errEmptyObject):
@@ -293,7 +292,7 @@ func findTypeURL(d decoder) (string, error) {
 			}
 			return typeURL, nil
 		}
-		name, err := d.readStringView()
+		name, err := d.readString()
 		if err != nil {
 			return "", err
 		}
@@ -311,17 +310,14 @@ func findTypeURL(d decoder) (string, error) {
 			return "", d.newError(`duplicate "@type" field`)
 		}
 		// Read field value.
-		if d.dec.PeekKind() != kindString {
-			tok, err := d.dec.ReadToken()
-			if err != nil {
-				return "", err
-			}
-			return "", d.newError(`@type field value is not a string: %v`, tokenString(tok))
-		}
-		typeURL, err = d.readString()
+		tok, err := d.readToken()
 		if err != nil {
 			return "", err
 		}
+		if tok.Kind() != kindString {
+			return "", d.newError(`@type field value is not a string: %v`, tokenString(tok))
+		}
+		typeURL = tok.String()
 		if typeURL == "" {
 			return "", d.newError(`@type field contains empty value`)
 		}
@@ -353,7 +349,7 @@ func (d decoder) unmarshalAnyValue(unmarshal unmarshalFunc, m protoreflect.Messa
 			}
 			return nil
 		}
-		name, err := d.readStringView()
+		name, err := d.readString()
 		if err != nil {
 			return err
 		}
@@ -420,7 +416,7 @@ func (d decoder) unmarshalEmpty(protoreflect.Message) error {
 			_, err := d.dec.ReadToken()
 			return err
 		}
-		name, err := d.readStringView()
+		name, err := d.readString()
 		if err != nil {
 			return err
 		}
@@ -499,7 +495,7 @@ func (d decoder) unmarshalKnownValue(m protoreflect.Message) error {
 		val = protoreflect.ValueOfBool(kind == kindTrue)
 
 	case kindNumber:
-		tok, err := d.readScalar()
+		tok, err := d.readToken()
 		if err != nil {
 			return err
 		}
@@ -507,7 +503,7 @@ func (d decoder) unmarshalKnownValue(m protoreflect.Message) error {
 		var ok bool
 		val, ok = unmarshalFloat(tok, 64)
 		if !ok {
-			return d.newError("invalid %v: %v", valueFullName, tok)
+			return d.newError("invalid %v: %v", valueFullName, tokenString(tok))
 		}
 
 	case kindString:
@@ -620,14 +616,7 @@ func trimFraction(b []byte) []byte {
 }
 
 func (d decoder) unmarshalDuration(m protoreflect.Message) error {
-	if d.dec.PeekKind() != kindString {
-		tok, err := d.dec.ReadToken()
-		if err != nil {
-			return err
-		}
-		return d.unexpectedTokenError(tok)
-	}
-	s, err := d.readStringView()
+	s, err := d.readString()
 	if err != nil {
 		return err
 	}
@@ -779,14 +768,7 @@ func (e encoder) marshalTimestamp(m protoreflect.Message) error {
 }
 
 func (d decoder) unmarshalTimestamp(m protoreflect.Message) error {
-	if d.dec.PeekKind() != kindString {
-		tok, err := d.dec.ReadToken()
-		if err != nil {
-			return err
-		}
-		return d.unexpectedTokenError(tok)
-	}
-	s, err := d.readStringView()
+	s, err := d.readString()
 	if err != nil {
 		return err
 	}
@@ -840,14 +822,7 @@ func (e encoder) marshalFieldMask(m protoreflect.Message) error {
 }
 
 func (d decoder) unmarshalFieldMask(m protoreflect.Message) error {
-	if d.dec.PeekKind() != kindString {
-		tok, err := d.dec.ReadToken()
-		if err != nil {
-			return err
-		}
-		return d.unexpectedTokenError(tok)
-	}
-	s, err := d.readStringView()
+	s, err := d.readString()
 	if err != nil {
 		return err
 	}

@@ -18,9 +18,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
-	"unicode/utf8"
-	"unsafe"
 
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
@@ -95,8 +92,7 @@ type UnmarshalOptions struct {
 // using options in the UnmarshalOptions object. If Unmarshal returns an error,
 // the given message may be partially set.
 func (o UnmarshalOptions) Unmarshal(b []byte, m proto.Message) error {
-	dec := getDecoder(b, jsontext.AllowDuplicateNames(true))
-	defer putDecoder(dec)
+	dec := jsontext.NewDecoder(bytes.NewBuffer(b), jsontext.AllowDuplicateNames(true))
 	return o.unmarshalAll(dec, m)
 }
 
@@ -156,13 +152,11 @@ func (o UnmarshalOptions) UnmarshalDecode(dec *jsontext.Decoder, m proto.Message
 		o.RecursionLimit = protowire.DefaultRecursionLimit
 	}
 
-	decOptions := dec.Options()
-	allowInvalidUTF8, _ := jsonv2.GetOption(decOptions, jsontext.AllowInvalidUTF8)
+	allowInvalidUTF8, _ := jsonv2.GetOption(dec.Options(), jsontext.AllowInvalidUTF8)
 	d := decoder{
-		dec:        dec,
-		opts:       o,
-		checkUTF8:  allowInvalidUTF8,
-		subOptions: subDecoderOptions[boolIndex(allowInvalidUTF8)],
+		dec:       dec,
+		opts:      o,
+		checkUTF8: allowInvalidUTF8,
 	}
 	if err := d.unmarshalMessage(m.ProtoReflect(), false); err != nil {
 		return wrapError(err)
@@ -171,28 +165,6 @@ func (o UnmarshalOptions) UnmarshalDecode(dec *jsontext.Decoder, m proto.Message
 		return nil
 	}
 	return proto.CheckInitialized(m)
-}
-
-// decoderPool holds decoders for Unmarshal and Any values.
-// Each decoder reads a bytes.Buffer in place and retains no input after release.
-var (
-	decoderPool sync.Pool
-	emptyBuffer = new(bytes.Buffer)
-)
-
-func getDecoder(b []byte, opts jsontext.Options) *jsontext.Decoder {
-	dec, _ := decoderPool.Get().(*jsontext.Decoder)
-	if dec == nil {
-		return jsontext.NewDecoder(bytes.NewBuffer(b), opts)
-	}
-	dec.Reset(bytes.NewBuffer(b), opts)
-	return dec
-}
-
-// putDecoder releases the input before it returns dec to the pool.
-func putDecoder(dec *jsontext.Decoder) {
-	dec.Reset(emptyBuffer)
-	decoderPool.Put(dec)
 }
 
 // decoder holds the state for one call. Methods use a value receiver, so that
@@ -204,29 +176,6 @@ type decoder struct {
 	// checkUTF8 is true when the jsontext.Decoder allows invalid UTF-8. Then
 	// the decoder must check strings itself to keep the ProtoJSON rules.
 	checkUTF8 bool
-	// subOptions are the options for sub-decoders. They copy only the syntax
-	// options that matter, not internal options of encoding/json.
-	subOptions jsontext.Options
-}
-
-// subDecoderOptions has the sub-decoder options for AllowInvalidUTF8 false and
-// true, so that a call does not allocate them.
-//
-// A sub-decoder reads a value that d.dec.ReadValue already read, and ReadValue
-// checks the whole value for duplicate names if the options of d.dec require
-// it. So sub-decoders always allow duplicate names. This also keeps pooled
-// sub-decoders small: a decoder that checks for duplicate names keeps a copy
-// of the names it read, also after Reset.
-var subDecoderOptions = [2]jsontext.Options{
-	jsonv2.JoinOptions(jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(false)),
-	jsonv2.JoinOptions(jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(true)),
-}
-
-func boolIndex(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }
 
 // newError returns an error with the location of the decoder.
@@ -251,162 +200,35 @@ func tokenString(tok jsontext.Token) string {
 	return tok.String()
 }
 
-// scalar is a JSON scalar value. For a string, s is the unquoted value. For a
-// number, s is the raw JSON number. For other kinds, s is not used.
-//
-// Unless owned is true, s refers to memory of the jsontext.Decoder and is
-// valid only until the next read from the decoder. Use it, or copy it, before
-// the next read.
-type scalar struct {
-	kind  jsontext.Kind
-	s     string
-	owned bool
-}
-
-func (v scalar) String() string {
-	switch v.kind {
-	case kindString:
-		return strconv.Quote(v.s)
-	case kindNumber:
-		return v.s
-	case kindNull:
-		return "null"
-	case kindTrue:
-		return "true"
-	case kindFalse:
-		return "false"
-	default:
-		return v.kind.String()
-	}
-}
-
-// ownedString returns a copy of s that does not refer to decoder memory.
-func (v scalar) ownedString() string {
-	if v.owned {
-		return v.s
-	}
-	return strings.Clone(v.s)
-}
-
-// readScalar reads the next JSON value. If the value is not a scalar, the
-// returned kind tells what it is, and the caller reports an error.
-func (d decoder) readScalar() (scalar, error) {
-	// Do not read a whole object or array, which cannot be a scalar, before
-	// the caller reports the error.
-	if kind := d.dec.PeekKind(); kind == kindObjectOpen || kind == kindArrayOpen {
-		tok, err := d.dec.ReadToken()
+// readToken reads the next JSON token. When the underlying decoder allows
+// invalid UTF-8, string tokens are checked against the strict ProtoJSON UTF-8
+// rules before they are returned.
+func (d decoder) readToken() (jsontext.Token, error) {
+	if d.checkUTF8 && d.dec.PeekKind() == kindString {
+		raw, err := d.dec.ReadValue()
 		if err != nil {
-			return scalar{}, err
+			return jsontext.Token{}, err
 		}
-		return scalar{kind: tok.Kind()}, nil
-	}
-	// ReadValue is faster than ReadToken, and it does not allocate.
-	raw, err := d.dec.ReadValue()
-	if err != nil {
-		return scalar{}, err
-	}
-	switch kind := raw.Kind(); kind {
-	case kindString:
-		b, owned, err := d.stringContent(raw)
+		b, err := jsontext.AppendUnquote(nil, raw)
 		if err != nil {
-			return scalar{}, err
+			return jsontext.Token{}, d.newError("invalid string: %v", err)
 		}
-		return scalar{kind: kindString, s: unsafeString(b), owned: owned}, nil
-	case kindNumber:
-		return scalar{kind: kindNumber, s: unsafeString(raw)}, nil
-	default:
-		return scalar{kind: kind}, nil
+		return jsontext.String(string(b)), nil
 	}
+	return d.dec.ReadToken()
 }
 
-// stringContent returns the unquoted content of the raw JSON string. If the
-// string has no escape sequences, the result refers to raw and owned is false.
-// It always rejects invalid UTF-8.
-func (d decoder) stringContent(raw jsontext.Value) (b []byte, owned bool, err error) {
-	content := raw[1 : len(raw)-1]
-	if bytes.IndexByte(content, '\\') < 0 {
-		// The decoder checks UTF-8, unless its options allow invalid UTF-8.
-		if d.checkUTF8 && !utf8.Valid(content) {
-			return nil, false, d.newError("invalid UTF-8 in string")
-		}
-		return content, false, nil
-	}
-	b, err = jsontext.AppendUnquote(nil, raw)
-	if err != nil {
-		return nil, false, d.newError("invalid string: %v", err)
-	}
-	return b, true, nil
-}
-
-// readStringValue reads the next JSON value, which must be a string. It does
-// not read a whole object or array before it reports the error, so that an
-// object or array that never ends cannot make it read without a limit.
-func (d decoder) readStringValue() (jsontext.Value, error) {
-	if kind := d.dec.PeekKind(); kind == kindObjectOpen || kind == kindArrayOpen {
-		// In the place of an object name, ReadToken returns the error. In the
-		// place of a value, the callers check the kind first, so the second
-		// return is only a guard.
-		tok, err := d.dec.ReadToken()
-		if err != nil {
-			return nil, err
-		}
-		return nil, d.unexpectedTokenError(tok)
-	}
-	return d.dec.ReadValue()
-}
-
-// readStringView reads the next JSON value, which must be a string, and
-// returns its unquoted value. The result can refer to decoder memory, so it is
-// valid only until the next read from the decoder. Use it for object names
-// and other short-lived values.
-func (d decoder) readStringView() (string, error) {
-	raw, err := d.readStringValue()
-	if err != nil {
-		return "", err
-	}
-	if raw.Kind() != kindString {
-		return "", d.unexpectedValueError(raw)
-	}
-	b, _, err := d.stringContent(raw)
-	return unsafeString(b), err
-}
-
-// readString reads the next JSON value, which must be a string, and returns
-// its unquoted value. The result does not refer to decoder memory.
+// readString reads the next JSON token, which must be a string, and returns
+// its unquoted value.
 func (d decoder) readString() (string, error) {
-	raw, err := d.readStringValue()
+	tok, err := d.readToken()
 	if err != nil {
 		return "", err
 	}
-	if raw.Kind() != kindString {
-		return "", d.unexpectedValueError(raw)
+	if tok.Kind() != kindString {
+		return "", d.unexpectedTokenError(tok)
 	}
-	b, owned, err := d.stringContent(raw)
-	if err != nil {
-		return "", err
-	}
-	if owned {
-		return unsafeString(b), nil
-	}
-	return string(b), nil
-}
-
-// unexpectedValueError returns a syntax error for the given unexpected value.
-func (d decoder) unexpectedValueError(raw jsontext.Value) error {
-	const maxLen = 64
-	if len(raw) > maxLen {
-		return d.newError("unexpected token %s...", raw[:maxLen])
-	}
-	return d.newError("unexpected token %s", raw)
-}
-
-// unsafeString returns a string that shares memory with b. The caller must
-// not change b while the string is in use.
-func unsafeString(b []byte) string {
-	if len(b) == 0 {
-		return ""
-	}
-	return unsafe.String(&b[0], len(b))
+	return tok.String(), nil
 }
 
 // subDecoder returns a decoder that reads the given JSON value with the same
@@ -414,18 +236,15 @@ func unsafeString(b []byte) string {
 //
 // The sub-decoder parses raw in place, without a copy. The caller must not
 // read from d.dec while it uses the sub-decoder, because raw can refer to the
-// memory of d.dec. The caller must call putDecoder when it is done.
-//
-// The jsontext.Decoder comes from a pool. This is safe because no string view
-// lives longer than the sub-decoder: a value that is kept is always a copy.
+// memory of d.dec.
 func (d decoder) subDecoder(raw []byte) decoder {
-	d.dec = getDecoder(raw, d.subOptions)
+	d.dec = jsontext.NewDecoder(bytes.NewBuffer(raw), jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(d.checkUTF8))
 	return d
 }
 
 // reset makes the sub-decoder read raw again from the start.
 func (d decoder) reset(raw []byte) {
-	d.dec.Reset(bytes.NewBuffer(raw), d.subOptions)
+	d.dec.Reset(bytes.NewBuffer(raw), jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(d.checkUTF8))
 }
 
 // unmarshalMessage unmarshals a message into the given protoreflect.Message.
@@ -459,9 +278,7 @@ func (d decoder) unmarshalMessage(m protoreflect.Message, skipTypeURL bool) erro
 			_, err := d.dec.ReadToken()
 			return err
 		}
-		// The name refers to decoder memory. It is valid only until the next
-		// read.
-		name, err := d.readStringView()
+		name, err := d.readString()
 		if err != nil {
 			return err
 		}
@@ -480,9 +297,7 @@ func (d decoder) unmarshalMessage(m protoreflect.Message, skipTypeURL bool) erro
 		var fd protoreflect.FieldDescriptor
 		if strings.HasPrefix(name, "[") && strings.HasSuffix(name, "]") {
 			// Only extension names are in [name] format.
-			// The resolver is caller code that can keep its argument, so it
-			// gets a copy, not a view into decoder memory.
-			extName := protoreflect.FullName(strings.Clone(name[1 : len(name)-1]))
+			extName := protoreflect.FullName(name[1 : len(name)-1])
 			extType, err := d.opts.Resolver.FindExtensionByName(extName)
 			// protoregistry requires resolvers to return exactly NotFound,
 			// not a wrapped error. Compare the same way as protojson.
@@ -601,7 +416,7 @@ func (d decoder) unmarshalScalar(fd protoreflect.FieldDescriptor) (protoreflect.
 	const b32 int = 32
 	const b64 int = 64
 
-	tok, err := d.readScalar()
+	tok, err := d.readToken()
 	if err != nil {
 		return protoreflect.Value{}, err
 	}
@@ -609,7 +424,7 @@ func (d decoder) unmarshalScalar(fd protoreflect.FieldDescriptor) (protoreflect.
 	kind := fd.Kind()
 	switch kind {
 	case protoreflect.BoolKind:
-		switch tok.kind {
+		switch tok.Kind() {
 		case kindTrue:
 			return protoreflect.ValueOfBool(true), nil
 		case kindFalse:
@@ -647,8 +462,8 @@ func (d decoder) unmarshalScalar(fd protoreflect.FieldDescriptor) (protoreflect.
 		}
 
 	case protoreflect.StringKind:
-		if tok.kind == kindString {
-			return protoreflect.ValueOfString(tok.ownedString()), nil
+		if tok.Kind() == kindString {
+			return protoreflect.ValueOfString(tok.String()), nil
 		}
 
 	case protoreflect.BytesKind:
@@ -665,35 +480,30 @@ func (d decoder) unmarshalScalar(fd protoreflect.FieldDescriptor) (protoreflect.
 		return protoreflect.Value{}, d.newError("invalid scalar kind %v", kind)
 	}
 
-	return protoreflect.Value{}, d.newError("invalid value for %v field %v: %v", kind, fd.JSONName(), tok)
+	return protoreflect.Value{}, d.newError("invalid value for %v field %v: %v", kind, fd.JSONName(), tokenString(tok))
 }
 
-// numberFromString returns the JSON number in a JSON string. The whole string
-// must be one JSON number. parseNumber accepts no white space, so a string
-// with white space is rejected.
-func numberFromString(s string) (string, bool) {
-	if n, ok := parseNumber(s); !ok || n != len(s) {
-		return "", false
-	}
-	return s, true
-}
-
-func unmarshalInt(tok scalar, bitSize int) (protoreflect.Value, bool) {
-	var raw string
-	switch tok.kind {
+func unmarshalInt(tok jsontext.Token, bitSize int) (protoreflect.Value, bool) {
+	var n int64
+	switch tok.Kind() {
 	case kindNumber:
-		raw = tok.s
-	case kindString:
-		s, ok := numberFromString(tok.s)
-		if !ok {
+		var err error
+		if n, err = tok.Int(); err == nil {
+			if bitSize == 32 && (n < math.MinInt32 || n > math.MaxInt32) {
+				return protoreflect.Value{}, false
+			}
+			break
+		}
+		var ok bool
+		if n, ok = parseInt(tok.String(), bitSize); !ok {
 			return protoreflect.Value{}, false
 		}
-		raw = s
+	case kindString:
+		var ok bool
+		if n, ok = parseInt(tok.String(), bitSize); !ok {
+			return protoreflect.Value{}, false
+		}
 	default:
-		return protoreflect.Value{}, false
-	}
-	n, ok := parseInt(raw, bitSize)
-	if !ok {
 		return protoreflect.Value{}, false
 	}
 	if bitSize == 32 {
@@ -702,22 +512,27 @@ func unmarshalInt(tok scalar, bitSize int) (protoreflect.Value, bool) {
 	return protoreflect.ValueOfInt64(n), true
 }
 
-func unmarshalUint(tok scalar, bitSize int) (protoreflect.Value, bool) {
-	var raw string
-	switch tok.kind {
+func unmarshalUint(tok jsontext.Token, bitSize int) (protoreflect.Value, bool) {
+	var n uint64
+	switch tok.Kind() {
 	case kindNumber:
-		raw = tok.s
-	case kindString:
-		s, ok := numberFromString(tok.s)
-		if !ok {
+		var err error
+		if n, err = tok.Uint(); err == nil {
+			if bitSize == 32 && n > math.MaxUint32 {
+				return protoreflect.Value{}, false
+			}
+			break
+		}
+		var ok bool
+		if n, ok = parseUint(tok.String(), bitSize); !ok {
 			return protoreflect.Value{}, false
 		}
-		raw = s
+	case kindString:
+		var ok bool
+		if n, ok = parseUint(tok.String(), bitSize); !ok {
+			return protoreflect.Value{}, false
+		}
 	default:
-		return protoreflect.Value{}, false
-	}
-	n, ok := parseUint(raw, bitSize)
-	if !ok {
 		return protoreflect.Value{}, false
 	}
 	if bitSize == 32 {
@@ -726,13 +541,25 @@ func unmarshalUint(tok scalar, bitSize int) (protoreflect.Value, bool) {
 	return protoreflect.ValueOfUint64(n), true
 }
 
-func unmarshalFloat(tok scalar, bitSize int) (protoreflect.Value, bool) {
-	var raw string
-	switch tok.kind {
+func unmarshalFloat(tok jsontext.Token, bitSize int) (protoreflect.Value, bool) {
+	switch tok.Kind() {
 	case kindNumber:
-		raw = tok.s
+		if bitSize == 32 {
+			n, err := tok.Float32()
+			if err != nil {
+				return protoreflect.Value{}, false
+			}
+			return protoreflect.ValueOfFloat32(n), true
+		}
+		n, err := tok.Float()
+		if err != nil {
+			return protoreflect.Value{}, false
+		}
+		return protoreflect.ValueOfFloat64(n), true
+
 	case kindString:
-		switch tok.s {
+		s := tok.String()
+		switch s {
 		case "NaN":
 			return floatValue(math.NaN(), bitSize), true
 		case "Infinity":
@@ -740,19 +567,18 @@ func unmarshalFloat(tok scalar, bitSize int) (protoreflect.Value, bool) {
 		case "-Infinity":
 			return floatValue(math.Inf(-1), bitSize), true
 		}
-		s, ok := numberFromString(tok.s)
-		if !ok {
+		if _, ok := parseNumberParts(s); !ok {
 			return protoreflect.Value{}, false
 		}
-		raw = s
+		n, err := strconv.ParseFloat(s, bitSize)
+		if err != nil {
+			return protoreflect.Value{}, false
+		}
+		return floatValue(n, bitSize), true
+
 	default:
 		return protoreflect.Value{}, false
 	}
-	n, err := strconv.ParseFloat(raw, bitSize)
-	if err != nil {
-		return protoreflect.Value{}, false
-	}
-	return floatValue(n, bitSize), true
 }
 
 func floatValue(n float64, bitSize int) protoreflect.Value {
@@ -762,12 +588,12 @@ func floatValue(n float64, bitSize int) protoreflect.Value {
 	return protoreflect.ValueOfFloat64(n)
 }
 
-func unmarshalBytes(tok scalar) (protoreflect.Value, bool) {
-	if tok.kind != kindString {
+func unmarshalBytes(tok jsontext.Token) (protoreflect.Value, bool) {
+	if tok.Kind() != kindString {
 		return protoreflect.Value{}, false
 	}
 
-	s := tok.s
+	s := tok.String()
 	enc := base64.StdEncoding
 	if strings.ContainsAny(s, "-_") {
 		enc = base64.URLEncoding
@@ -782,11 +608,11 @@ func unmarshalBytes(tok scalar) (protoreflect.Value, bool) {
 	return protoreflect.ValueOfBytes(b), true
 }
 
-func unmarshalEnum(tok scalar, fd protoreflect.FieldDescriptor, discardUnknown bool) (protoreflect.Value, bool) {
-	switch tok.kind {
+func unmarshalEnum(tok jsontext.Token, fd protoreflect.FieldDescriptor, discardUnknown bool) (protoreflect.Value, bool) {
+	switch tok.Kind() {
 	case kindString:
 		// Lookup EnumNumber based on name.
-		if enumVal := fd.Enum().Values().ByName(protoreflect.Name(tok.s)); enumVal != nil {
+		if enumVal := fd.Enum().Values().ByName(protoreflect.Name(tok.String())); enumVal != nil {
 			return protoreflect.ValueOfEnum(enumVal.Number()), true
 		}
 		if discardUnknown {
@@ -794,8 +620,8 @@ func unmarshalEnum(tok scalar, fd protoreflect.FieldDescriptor, discardUnknown b
 		}
 
 	case kindNumber:
-		if n, ok := parseInt(tok.s, 32); ok {
-			return protoreflect.ValueOfEnum(protoreflect.EnumNumber(n)), true
+		if v, ok := unmarshalInt(tok, 32); ok {
+			return protoreflect.ValueOfEnum(protoreflect.EnumNumber(v.Int())), true
 		}
 
 	case kindNull:
@@ -881,9 +707,7 @@ func (d decoder) unmarshalMap(mmap protoreflect.Map, fd protoreflect.FieldDescri
 			_, err := d.dec.ReadToken()
 			return err
 		}
-		// The name refers to decoder memory. unmarshalMapKey copies it if it
-		// keeps it.
-		name, err := d.readStringView()
+		name, err := d.readString()
 		if err != nil {
 			return err
 		}
@@ -920,7 +744,7 @@ func (d decoder) unmarshalMapKey(name string, fd protoreflect.FieldDescriptor) (
 	kind := fd.Kind()
 	switch kind {
 	case protoreflect.StringKind:
-		return protoreflect.ValueOfString(strings.Clone(name)).MapKey(), nil
+		return protoreflect.ValueOfString(name).MapKey(), nil
 
 	case protoreflect.BoolKind:
 		switch name {
@@ -963,22 +787,7 @@ func (d decoder) unmarshalMapKey(name string, fd protoreflect.FieldDescriptor) (
 func (d decoder) skipJSONValue() error {
 	var open int
 	for {
-		if d.checkUTF8 && d.dec.PeekKind() == kindString {
-			// The decoder allows invalid UTF-8, so check the raw string. This
-			// is the same rule as for strings that are not skipped.
-			raw, err := d.dec.ReadValue()
-			if err != nil {
-				return err
-			}
-			if _, _, err := d.stringContent(raw); err != nil {
-				return err
-			}
-			if open == 0 {
-				return nil
-			}
-			continue
-		}
-		tok, err := d.dec.ReadToken()
+		tok, err := d.readToken()
 		if err != nil {
 			return err
 		}

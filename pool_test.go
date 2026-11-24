@@ -3,11 +3,8 @@ package jsonwire
 import (
 	"bytes"
 	"encoding/json/jsontext"
-	jsonv2 "encoding/json/v2"
-	"runtime"
 	"strings"
 	"testing"
-	"weak"
 
 	testpb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
 )
@@ -208,73 +205,4 @@ func TestIndentCache(t *testing.T) {
 			t.Errorf("indent of %d characters: cached is %v, want %v", n, cached, want)
 		}
 	}
-}
-
-// TestReleaseDecoder checks that a pooled decoder does not keep the input
-// of the caller alive.
-func TestReleaseDecoder(t *testing.T) {
-	input := largeInput(`{"optionalInt32":1}`)
-	ref := weak.Make(&input[0])
-	dec := getDecoder(input, jsontext.AllowDuplicateNames(true))
-	if _, err := dec.ReadToken(); err != nil {
-		t.Fatal(err)
-	}
-	// putDecoder must release the input before the decoder goes into the
-	// pool, where it stays alive.
-	putDecoder(dec)
-	input = nil
-	runtime.GC()
-	if ref.Value() != nil {
-		t.Error("a pooled decoder keeps the input")
-	}
-	runtime.KeepAlive(dec)
-}
-
-// TestSubDecoderOptions checks that sub-decoders allow duplicate names. A
-// decoder that checks for duplicate names keeps the names it read, also after
-// Reset, so a pooled decoder would keep them.
-func TestSubDecoderOptions(t *testing.T) {
-	t.Parallel()
-	for i, opts := range subDecoderOptions {
-		if allow, _ := jsonv2.GetOption(opts, jsontext.AllowDuplicateNames); !allow {
-			t.Errorf("subDecoderOptions[%d] checks for duplicate names", i)
-		}
-		if allow, _ := jsonv2.GetOption(opts, jsontext.AllowInvalidUTF8); allow != (i == 1) {
-			t.Errorf("subDecoderOptions[%d]: AllowInvalidUTF8 is %v", i, allow)
-		}
-	}
-}
-
-// TestSubDecoderReleasesInput checks that putDecoder drops the reference
-// to the input, so that a pooled sub-decoder does not keep it alive.
-func TestSubDecoderReleasesInput(t *testing.T) {
-	t.Parallel()
-	input := largeInput(`{"value":1}`)
-	ref := weak.Make(&input[0])
-	sub := decoder{subOptions: subDecoderOptions[0]}.subDecoder(input)
-	if _, err := sub.dec.ReadToken(); err != nil {
-		t.Fatal(err)
-	}
-	// Hold the decoder directly. The pool can drop it.
-	dec := sub.dec
-	putDecoder(sub.dec)
-	input = nil
-	runtime.GC()
-	if ref.Value() != nil {
-		t.Error("a pooled sub-decoder keeps the input")
-	}
-	runtime.KeepAlive(dec)
-}
-
-// largeInput returns s followed by white space, in a new allocation of 1 KB.
-// A weak pointer to a small allocation is not reliable: the runtime puts
-// allocations below 16 bytes together in one block, which other values can
-// keep alive.
-func largeInput(s string) []byte {
-	b := make([]byte, 1<<10)
-	n := copy(b, s)
-	for i := n; i < len(b); i++ {
-		b[i] = ' '
-	}
-	return b
 }
