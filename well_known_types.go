@@ -162,13 +162,13 @@ func (e encoder) marshalAny(m protoreflect.Message) error {
 		if err := e.enc.WriteToken(jsontext.BeginObject); err != nil {
 			return err
 		}
-		if err := e.writeName("@type"); err != nil {
+		if err := e.enc.WriteToken(jsontext.String("@type")); err != nil {
 			return err
 		}
 		if err := e.writeString(typeURL, string(anyFullName)+".type_url"); err != nil {
 			return err
 		}
-		if err := e.writeName("value"); err != nil {
+		if err := e.enc.WriteToken(jsontext.String("value")); err != nil {
 			return err
 		}
 		if err := marshal(e, em); err != nil {

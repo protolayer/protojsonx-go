@@ -9,6 +9,7 @@ package jsonwire
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/base64"
 	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
@@ -112,30 +113,42 @@ type noUnkeyedLiterals struct{}
 // options in MarshalOptions. The output is deterministic: the same message and
 // options give the same bytes.
 func (o MarshalOptions) Marshal(m proto.Message) ([]byte, error) {
-	state, err := o.getEncodeState()
-	if err != nil {
-		return nil, err
-	}
-	defer putEncodeState(state)
-	if err := o.marshalEncode(state.enc, m, state.scratch, false); err != nil {
-		return nil, wrapError(err)
-	}
-	return bytes.Clone(bytes.TrimSuffix(state.buf.Bytes(), []byte("\n"))), nil
+	return o.marshalToState(m, nil)
 }
 
 // MarshalAppend appends the ProtoJSON encoding of m to b and returns the
 // result. On error, it returns nil. protojson does the same, except for a
 // missing required field, where it also returns the output.
 func (o MarshalOptions) MarshalAppend(b []byte, m proto.Message) ([]byte, error) {
-	state, err := o.getEncodeState()
+	return o.marshalToState(m, b)
+}
+
+func (o MarshalOptions) marshalToState(m proto.Message, dst []byte) ([]byte, error) {
+	opts, err := o.encoderOptions()
 	if err != nil {
 		return nil, err
 	}
-	defer putEncodeState(state)
-	if err := o.marshalEncode(state.enc, m, state.scratch, false); err != nil {
+	s := getEncodeState()
+	s.resetEncoder(opts)
+	err = o.marshalEncode(s.enc, m, s, false)
+	var out []byte
+	if err == nil {
+		raw := bytes.TrimSuffix(s.buf.Bytes(), []byte("\n"))
+		switch {
+		case dst != nil:
+			out = append(dst, raw...)
+		case !s.poolable():
+			// s will not be pooled, so return its buffer directly without copying.
+			out = raw
+		default:
+			out = bytes.Clone(raw)
+		}
+	}
+	putEncodeState(s, err == nil)
+	if err != nil {
 		return nil, wrapError(err)
 	}
-	return append(b, bytes.TrimSuffix(state.buf.Bytes(), []byte("\n"))...), nil
+	return out, nil
 }
 
 // Format returns the ProtoJSON encoding of m as a string, for human
@@ -153,16 +166,22 @@ func (o MarshalOptions) Format(m proto.Message) string {
 // using options in MarshalOptions. The output has no trailing newline, which
 // is the same as json.MarshalWrite.
 func (o MarshalOptions) MarshalWrite(w io.Writer, m proto.Message) error {
-	state, err := o.getEncodeState()
+	opts, err := o.encoderOptions()
 	if err != nil {
 		return err
 	}
-	defer putEncodeState(state)
-	if err := o.marshalEncode(state.enc, m, state.scratch, false); err != nil {
+	s := getEncodeState()
+	s.resetEncoder(opts)
+	err = o.marshalEncode(s.enc, m, s, false)
+	var writeErr error
+	if err == nil {
+		_, writeErr = w.Write(bytes.TrimSuffix(s.buf.Bytes(), []byte("\n")))
+	}
+	putEncodeState(s, err == nil)
+	if err != nil {
 		return wrapError(err)
 	}
-	_, err = w.Write(bytes.TrimSuffix(state.buf.Bytes(), []byte("\n")))
-	return err
+	return writeErr
 }
 
 // MarshalEncode writes the given [proto.Message] as the next JSON value of enc
@@ -180,12 +199,13 @@ func (o MarshalOptions) MarshalWrite(w io.Writer, m proto.Message) error {
 // If MarshalEncode returns an error, enc can contain part of the value.
 func (o MarshalOptions) MarshalEncode(enc *jsontext.Encoder, m proto.Message) error {
 	allowInvalidUTF8, _ := jsonv2.GetOption(enc.Options(), jsontext.AllowInvalidUTF8)
-	scratch := encodeScratchPool.Get().(*encodeScratch)
-	defer putEncodeScratch(scratch)
-	return wrapError(o.marshalEncode(enc, m, scratch, allowInvalidUTF8))
+	s := getEncodeState()
+	err := o.marshalEncode(enc, m, s, allowInvalidUTF8)
+	putEncodeState(s, true)
+	return wrapError(err)
 }
 
-func (o MarshalOptions) marshalEncode(enc *jsontext.Encoder, m proto.Message, scratch *encodeScratch, checkUTF8 bool) error {
+func (o MarshalOptions) marshalEncode(enc *jsontext.Encoder, m proto.Message, s *encodeState, checkUTF8 bool) error {
 	if o.Resolver == nil {
 		o.Resolver = protoregistry.GlobalTypes
 	}
@@ -204,26 +224,9 @@ func (o MarshalOptions) marshalEncode(enc *jsontext.Encoder, m proto.Message, sc
 			return err
 		}
 	}
-	e := encoder{enc: enc, opts: o, checkUTF8: checkUTF8, s: scratch}
+	e := encoder{enc: enc, opts: o, checkUTF8: checkUTF8, s: s}
 	return e.marshalMessage(m.ProtoReflect(), "")
 }
-
-// encodeState is a reusable encoder and output buffer for Marshal and
-// MarshalWrite.
-type encodeState struct {
-	buf     bytes.Buffer
-	enc     *jsontext.Encoder
-	scratch *encodeScratch
-	// strikes counts the calls in a row that used less than a quarter of buf.
-	strikes int
-}
-
-var encodeStatePool sync.Pool
-
-// maxPooledValue is the largest value written with AvailableBuffer, for which
-// the encoder goes back into the pool. The encoder keeps a scratch buffer as
-// large as the largest such value, and Reset does not free it.
-const maxPooledValue = 64 << 10
 
 // Encoder options for Marshal and MarshalWrite. Field names are unique by
 // construction, so the check for duplicate names is turned off. This is
@@ -231,101 +234,32 @@ const maxPooledValue = 64 << 10
 // conflicting JSON names.
 var (
 	compactOptions   = jsontext.AllowDuplicateNames(true)
-	multilineOptions sync.Map // indent string -> jsontext.Options
+	multilineOptions = jsonv2.JoinOptions(compactOptions, jsontext.Multiline(true), jsontext.WithIndent(defaultIndent))
 )
-
-// maxCachedIndent is the length of the longest indent in the options cache.
-const maxCachedIndent = 8
 
 func (o MarshalOptions) encoderOptions() (jsontext.Options, error) {
 	indent := o.Indent
 	if o.Multiline && indent == "" {
-		indent = defaultIndent
+		return multilineOptions, nil
 	}
 	if indent == "" {
 		return compactOptions, nil
 	}
-	if opts, ok := multilineOptions.Load(indent); ok {
-		return opts.(jsontext.Options), nil
-	}
 	if strings.Trim(indent, " \t") != "" {
 		return nil, errorf("indent may only be composed of space or tab characters")
 	}
-	// Copy the indent, so that the cache does not keep a larger string that
-	// the caller's indent is part of.
-	indent = strings.Clone(indent)
-	opts := jsonv2.JoinOptions(compactOptions, jsontext.Multiline(true), jsontext.WithIndent(indent))
-	// Cache only short indents. There are at most 510 of them, so the cache
-	// cannot grow without limit.
-	if len(indent) <= maxCachedIndent {
-		multilineOptions.Store(indent, opts)
-	}
-	return opts, nil
+	return jsonv2.JoinOptions(compactOptions, jsontext.Multiline(true), jsontext.WithIndent(indent)), nil
 }
 
-func (o MarshalOptions) getEncodeState() (*encodeState, error) {
-	opts, err := o.encoderOptions()
-	if err != nil {
-		return nil, err
-	}
-	state, _ := encodeStatePool.Get().(*encodeState)
-	if state == nil {
-		state = &encodeState{scratch: newEncodeScratch()}
-	}
-	state.buf.Reset()
-	if state.enc == nil {
-		state.enc = jsontext.NewEncoder(&state.buf, opts)
-	} else {
-		state.enc.Reset(&state.buf, opts)
-	}
-	return state, nil
-}
-
-// putEncodeState returns state to the pool.
-func putEncodeState(state *encodeState) {
-	state.release()
-	encodeStatePool.Put(state)
-}
-
-// release frees the memory of state that should not go back into the pool.
-// For the buffer, it uses the same policy as encoding/json/v2 for its own
-// buffers (see jsontext/pools.go): it keeps a buffer that is small or at least
-// a quarter used, and it drops a buffer that was used less than that 5 times
-// in a row. So a buffer does not keep its size after one large message, and a
-// steady size reuses its buffer.
-func (state *encodeState) release() {
-	used, size := state.buf.Len(), state.buf.Cap()
-	switch {
-	case size <= 4<<10, used >= size/4:
-		state.strikes = 0
-	case state.strikes < 4:
-		state.strikes++
-	default:
-		state.strikes = 0
-		state.buf = bytes.Buffer{}
-	}
-	if state.scratch.maxValue > maxPooledValue {
-		// Drop the encoder and its large scratch buffer.
-		state.enc = nil
-	} else {
-		state.enc.Reset(io.Discard)
-	}
-	if state.scratch.tooLarge() {
-		state.scratch = newEncodeScratch()
-	}
-	state.scratch.reset()
-}
-
-// encodeScratch holds memory that the encoder uses again for each message. The
-// slices are used as stacks: a nested message appends after the entries of its
-// parent and removes its entries when it is done. The Range callbacks are
-// created once, so that a Range call does not allocate a closure.
-type encodeScratch struct {
-	fields  []fieldValue
-	entries []mapEntry
-	// maxValue is the length of the largest value written with
-	// AvailableBuffer.
-	maxValue int
+// encodeState holds reusable buffers and scratch stacks for marshaling.
+// The fields and entries slices are used as stacks: a nested message appends
+// after its parent and pops its entries when done. The Range callbacks are
+// created once per state to avoid closure allocations.
+type encodeState struct {
+	buf      bytes.Buffer
+	enc      *jsontext.Encoder
+	fields   []fieldValue
+	entries  []mapEntry
 	addField func(protoreflect.FieldDescriptor, protoreflect.Value) bool
 	addEntry func(protoreflect.MapKey, protoreflect.Value) bool
 }
@@ -340,45 +274,56 @@ type mapEntry struct {
 	v protoreflect.Value
 }
 
-func newEncodeScratch() *encodeScratch {
-	s := new(encodeScratch)
-	s.addField = func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		s.fields = append(s.fields, fieldValue{fd: fd, v: v})
-		return true
-	}
-	s.addEntry = func(k protoreflect.MapKey, v protoreflect.Value) bool {
-		s.entries = append(s.entries, mapEntry{k: k, v: v})
-		return true
-	}
-	return s
+const (
+	maxPooledBuf     = 64 << 10
+	maxPooledEntries = 1024
+)
+
+var encodeStatePool = sync.Pool{
+	New: func() any {
+		s := new(encodeState)
+		s.addField = func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+			s.fields = append(s.fields, fieldValue{fd: fd, v: v})
+			return true
+		}
+		s.addEntry = func(k protoreflect.MapKey, v protoreflect.Value) bool {
+			s.entries = append(s.entries, mapEntry{k: k, v: v})
+			return true
+		}
+		return s
+	},
 }
 
-// reset removes all entries, and the references to messages in them.
-func (s *encodeScratch) reset() {
-	s.maxValue = 0
+func getEncodeState() *encodeState {
+	return encodeStatePool.Get().(*encodeState)
+}
+
+func (s *encodeState) resetEncoder(opts jsontext.Options) {
+	s.buf.Reset()
+	if s.enc == nil {
+		s.enc = jsontext.NewEncoder(&s.buf, opts)
+	} else {
+		s.enc.Reset(&s.buf, opts)
+	}
+}
+
+func (s *encodeState) poolable() bool {
+	return s.buf.Cap() <= maxPooledBuf && cap(s.fields) <= maxPooledEntries && cap(s.entries) <= maxPooledEntries
+}
+
+func putEncodeState(s *encodeState, ok bool) {
+	if !ok || !s.poolable() {
+		return
+	}
+	s.buf.Reset()
+	if s.enc != nil {
+		s.enc.Reset(io.Discard)
+	}
 	clear(s.fields[:cap(s.fields)])
 	s.fields = s.fields[:0]
 	clear(s.entries[:cap(s.entries)])
 	s.entries = s.entries[:0]
-}
-
-var encodeScratchPool = sync.Pool{
-	New: func() any { return newEncodeScratch() },
-}
-
-// maxPooledEntries is the largest scratch stack that goes back into the pool.
-const maxPooledEntries = 1024
-
-func (s *encodeScratch) tooLarge() bool {
-	return cap(s.fields) > maxPooledEntries || cap(s.entries) > maxPooledEntries
-}
-
-func putEncodeScratch(s *encodeScratch) {
-	if s.tooLarge() {
-		return
-	}
-	s.reset()
-	encodeScratchPool.Put(s)
+	encodeStatePool.Put(s)
 }
 
 type encoder struct {
@@ -387,7 +332,7 @@ type encoder struct {
 	// checkUTF8 is true when the jsontext.Encoder allows invalid UTF-8. Then
 	// the encoder must check strings itself to keep the ProtoJSON rules.
 	checkUTF8 bool
-	s         *encodeScratch
+	s         *encodeState
 }
 
 // marshalMessage marshals the fields in the given protoreflect.Message. If the
@@ -406,7 +351,7 @@ func (e encoder) marshalMessage(m protoreflect.Message, typeURL string) error {
 		return err
 	}
 	if typeURL != "" {
-		if err := e.writeName("@type"); err != nil {
+		if err := e.enc.WriteToken(jsontext.String("@type")); err != nil {
 			return err
 		}
 		if err := e.writeString(typeURL, "@type"); err != nil {
@@ -416,91 +361,37 @@ func (e encoder) marshalMessage(m protoreflect.Message, typeURL string) error {
 
 	// Fields are written in declaration order, then extensions sorted by full
 	// name. This is the same order as protojson.
-	var err error
-	if e.opts.EmitUnpopulated || e.opts.EmitDefaultValues {
-		err = e.marshalAllFields(m)
-	} else {
-		err = e.marshalPopulatedFields(m)
-	}
-	if err != nil {
+	if err := e.marshalFields(m); err != nil {
 		return err
 	}
 	return e.enc.WriteToken(jsontext.EndObject)
 }
 
-// marshalAllFields writes all fields of m, including unpopulated fields. The
-// result is the same as with unpopulatedFieldRanger in protojson: Range gives
-// the populated fields and extensions, and each declared field for which Has
-// is false is added. The fields are written in the order of
-// compareFieldOrder.
-//
-// Do not write a declared field for which Has is true without Range. With a
-// dynamic message, Has can be true because an extension has the same number
-// as the declared field. Then Get returns the value of the extension.
-func (e encoder) marshalAllFields(m protoreflect.Message) error {
-	skipNull := !e.opts.EmitUnpopulated
+// marshalFields writes the fields of m in declaration order, followed by
+// extensions sorted by full name.
+func (e encoder) marshalFields(m protoreflect.Message) error {
 	start := len(e.s.fields)
 	m.Range(e.s.addField)
-	end := len(e.s.fields)
-	defer func() {
-		clear(e.s.fields[start:end])
-		e.s.fields = e.s.fields[:start]
-	}()
-	slices.SortFunc(e.s.fields[start:end], compareFieldOrder)
-
-	// Merge the sorted populated fields with the unpopulated fields, which
-	// come in declaration order.
-	j := start
-	fds := m.Descriptor().Fields()
-	for i := range fds.Len() {
-		// Write the populated fields that come before field i. Nested
-		// messages append to e.s.fields, which can move it, so read each
-		// entry from the current slice.
-		for ; j < end && !e.s.fields[j].fd.IsExtension() && e.s.fields[j].fd.Index() < i; j++ {
-			f := e.s.fields[j]
-			if err := e.marshalField(f.fd, f.v); err != nil {
-				return err
+	if e.opts.EmitUnpopulated || e.opts.EmitDefaultValues {
+		skipNull := !e.opts.EmitUnpopulated
+		fds := m.Descriptor().Fields()
+		for i := range fds.Len() {
+			fd := fds.Get(i)
+			if m.Has(fd) || fd.ContainingOneof() != nil {
+				// Range gave the populated fields, including any dynamic
+				// message extension that shares this field number. Unpopulated
+				// oneof fields (including proto3 optional) are never written.
+				continue
 			}
-		}
-		fd := fds.Get(i)
-		if m.Has(fd) || fd.ContainingOneof() != nil {
-			// Range gave the populated fields. Unpopulated oneof fields,
-			// including proto3 optional fields, are never written.
-			continue
-		}
-		var v protoreflect.Value // an invalid value is written as null
-		if !fd.HasPresence() {
-			v = m.Get(fd)
-		} else if skipNull {
-			continue
-		}
-		if err := e.marshalField(fd, v); err != nil {
-			return err
+			var v protoreflect.Value // an invalid value is written as null
+			if !fd.HasPresence() {
+				v = m.Get(fd)
+			} else if skipNull {
+				continue
+			}
+			e.s.fields = append(e.s.fields, fieldValue{fd: fd, v: v})
 		}
 	}
-	// Write the rest: populated fields after the last declared field, which
-	// cannot occur, and extensions.
-	for ; j < end; j++ {
-		f := e.s.fields[j]
-		if err := e.marshalField(f.fd, f.v); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// marshalPopulatedFields writes the populated fields of m. Range visits only
-// populated fields, which is much faster than a check of each field for a
-// message with many fields.
-func (e encoder) marshalPopulatedFields(m protoreflect.Message) error {
-	start := len(e.s.fields)
-	m.Range(e.s.addField)
-	return e.marshalFieldValues(start)
-}
-
-// marshalFieldValues sorts the fields from start to the end of the scratch
-// stack in the protojson order, writes them, and removes them from the stack.
-func (e encoder) marshalFieldValues(start int) error {
 	end := len(e.s.fields)
 	defer func() {
 		clear(e.s.fields[start:end])
@@ -508,8 +399,7 @@ func (e encoder) marshalFieldValues(start int) error {
 	}()
 	slices.SortFunc(e.s.fields[start:end], compareFieldOrder)
 	for i := start; i < end; i++ {
-		// Nested messages append to e.s.fields, which can move it. Read the
-		// entry from the current slice each time.
+		// Nested messages append to e.s.fields, which can reallocate it.
 		f := e.s.fields[i]
 		if err := e.marshalField(f.fd, f.v); err != nil {
 			return err
@@ -529,9 +419,9 @@ func compareFieldOrder(x, y fieldValue) int {
 		}
 		return -1
 	case xExt:
-		return strings.Compare(string(x.fd.FullName()), string(y.fd.FullName()))
+		return cmp.Compare(x.fd.FullName(), y.fd.FullName())
 	default:
-		return x.fd.Index() - y.fd.Index()
+		return cmp.Compare(x.fd.Index(), y.fd.Index())
 	}
 }
 
@@ -599,9 +489,6 @@ func (e encoder) marshalSingular(val protoreflect.Value, fd protoreflect.FieldDe
 		b := e.enc.AvailableBuffer()
 		b = append(b, '"')
 		b = base64.StdEncoding.AppendEncode(b, val.Bytes())
-		// Only bytes values can be large. Other values that use
-		// AvailableBuffer are numbers, timestamps, and durations.
-		e.s.maxValue = max(e.s.maxValue, len(b)+1)
 		b = append(b, '"')
 		return e.enc.WriteValue(b)
 
@@ -656,8 +543,7 @@ func (e encoder) marshalMap(mmap protoreflect.Map, fd protoreflect.FieldDescript
 	})
 	valueFd := fd.MapValue()
 	for i := start; i < end; i++ {
-		// Nested messages append to e.s.entries, which can move it. Read the
-		// entry from the current slice each time.
+		// Nested messages append to e.s.entries, which can reallocate it.
 		entry := e.s.entries[i]
 		if err := e.writeMapKey(entry.k, keyKind, fd); err != nil {
 			return err
@@ -677,9 +563,9 @@ func (e encoder) writeMapKey(k protoreflect.MapKey, kind protoreflect.Kind, fd p
 		return e.writeString(k.String(), string(fd.FullName()))
 	case protoreflect.BoolKind:
 		if k.Bool() {
-			return e.writeName("true")
+			return e.enc.WriteToken(jsontext.String("true"))
 		}
-		return e.writeName("false")
+		return e.enc.WriteToken(jsontext.String("false"))
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
 		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
 		return e.writeQuotedInt(k.Int())
@@ -720,30 +606,13 @@ func compareMapKeys(kind protoreflect.Kind, x, y protoreflect.MapKey) int {
 		}
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
 		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		return compare(x.Int(), y.Int())
+		return cmp.Compare(x.Int(), y.Int())
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
 		protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		return compare(x.Uint(), y.Uint())
+		return cmp.Compare(x.Uint(), y.Uint())
 	default:
-		return strings.Compare(x.String(), y.String())
+		return cmp.Compare(x.String(), y.String())
 	}
-}
-
-func compare[T int64 | uint64](x, y T) int {
-	switch {
-	case x < y:
-		return -1
-	case x > y:
-		return 1
-	default:
-		return 0
-	}
-}
-
-// writeName writes an object member name that comes from a descriptor or a
-// fixed string. These names are always valid UTF-8.
-func (e encoder) writeName(name string) error {
-	return e.enc.WriteToken(jsontext.String(name))
 }
 
 // writeString writes a string value or an object name and checks UTF-8.
