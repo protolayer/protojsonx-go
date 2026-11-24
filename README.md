@@ -1,12 +1,12 @@
 # jsonwire
 
-ProtoJSON for `encoding/json/v2`. Same output as `protojson`, but it streams through `jsontext` and is faster.
+ProtoJSON for `encoding/json/v2`. Produces the same output as `protojson`, streams directly through `jsontext`, and runs faster.
 
 ## Why
 
-`protojson` has no streaming API for `encoding/json/v2` ([golang/protobuf#1673](https://github.com/golang/protobuf/issues/1673)). A message inside a struct is first encoded to a separate `[]byte`, and then `encoding/json` copies and parses it again. 
+`protojson` does not yet support the streaming API in `encoding/json/v2` ([golang/protobuf#1673](https://github.com/golang/protobuf/issues/1673)). When a protobuf message sits inside a Go struct, `protojson` encodes it to a separate `[]byte` that `encoding/json` must validate and copy. On unmarshal, the JSON is parsed twice.
 
-This package adds the streaming API, so messages go straight through the encoder and decoder.
+`jsonwire` streams messages directly through `jsontext.Encoder` and `jsontext.Decoder`.
 
 ## Performance
 
@@ -17,11 +17,11 @@ Compared with `protojson`:
 
 Why it is faster:
 
-- **One pass.** No extra `[]byte` to copy and parse again inside `encoding/json`.
+- **One pass.** Streams directly inside `encoding/json` with no intermediate `[]byte`.
 - **Faster JSON engine.** Built on `jsontext` from `encoding/json/v2`.
-- **Fewer allocations.** Formats values into the encoder buffer and reuses encoder state.
+- **Fewer allocations.** Writes formatted values straight into the encoder buffer and reuses encoder state.
 
-[More about performance](docs/performance.md)
+See [Performance and tuning](docs/performance.md) for benchmarks and tuning tips.
 
 ## Install
 
@@ -44,7 +44,7 @@ err = jsonwire.Unmarshal(b, &out)
 
 [Run a complete example on the Go Playground](https://go.dev/play/p/vqkHbPGN3So).
 
-To use a message inside `encoding/json`:
+To stream a protobuf message inside a Go struct with `encoding/json` (v1 or v2):
 
 ```go
 func (x *MyMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
@@ -56,13 +56,13 @@ func (x *MyMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 }
 ```
 
-To generate these methods for every message, use [protoc-gen-go-json](https://github.com/mfridman/protoc-gen-go-json) with `emit_json_v2=true`.
+To generate these methods automatically for every message, use [protoc-gen-go-json](https://github.com/mfridman/protoc-gen-go-json) with `emit_json_v2=true`.
 
-## More
+## Docs
 
 - [Compatibility with protojson](docs/compatibility.md)
 - [Performance and tuning](docs/performance.md)
 
 ## License
 
-MIT. Parts are ported from [protobuf-go](https://github.com/protocolbuffers/protobuf-go) ([BSD-3-Clause](LICENSE-protobuf-go)). The test protos in `proto/` are from [protobuf](https://github.com/protocolbuffers/protobuf) ([BSD-3-Clause](proto/LICENSE)).
+MIT. Parts are ported from [protobuf-go](https://github.com/protocolbuffers/protobuf-go) ([BSD-3-Clause](LICENSE-protobuf-go)). Test protos in `proto/` are from [protobuf](https://github.com/protocolbuffers/protobuf) ([BSD-3-Clause](proto/LICENSE)).

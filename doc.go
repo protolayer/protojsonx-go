@@ -1,11 +1,10 @@
 // Package jsonwire marshals and unmarshals protocol buffer messages in the
-// ProtoJSON format through encoding/json/jsontext.
+// ProtoJSON format using encoding/json/jsontext.
 //
-// The format is the same as the format of
-// google.golang.org/protobuf/encoding/protojson. The difference is the I/O:
-// jsonwire reads from a [jsontext.Decoder] and writes to a [jsontext.Encoder].
-// This lets a message stream inside a larger JSON value that encoding/json/v2
-// handles, without an intermediate []byte.
+// It produces the same format as google.golang.org/protobuf/encoding/protojson,
+// but reads from a [jsontext.Decoder] and writes to a [jsontext.Encoder]. This
+// lets protobuf messages stream inside larger JSON values handled by
+// encoding/json/v2 without an intermediate []byte.
 //
 // The API follows the proposal in https://github.com/golang/protobuf/issues/1673:
 //
@@ -14,12 +13,13 @@
 //	UnmarshalDecode(*jsontext.Decoder, proto.Message) error
 //	UnmarshalRead(io.Reader, proto.Message) error
 //
-// Marshal and Unmarshal work on []byte, the same as protojson.
+// Marshal, MarshalAppend, Format, and Unmarshal work on []byte and string,
+// matching protojson.
 //
 // # Use with encoding/json
 //
-// To use jsonwire from json.Marshal and json.Unmarshal, implement the
-// json.MarshalerTo and json.UnmarshalerFrom interfaces on a message type:
+// Implement json.MarshalerTo and json.UnmarshalerFrom on a message type to
+// stream it through json.Marshal and json.Unmarshal (both v1 and v2):
 //
 //	func (x *MyMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
 //		return jsonwire.MarshalEncode(enc, x)
@@ -29,25 +29,22 @@
 //		return jsonwire.UnmarshalDecode(dec, x)
 //	}
 //
-// encoding/json v1 also calls these methods.
-//
 // # Differences from protojson
 //
-// The ProtoJSON format is the same, and the conformance suite gives the same
-// results. The main differences:
+// jsonwire passes the protobuf conformance suite. The main differences are:
 //
-//   - With MarshalEncode and UnmarshalDecode, the options of the jsontext
-//     Encoder or Decoder control the JSON syntax, for example indentation and
-//     duplicate object names. Strings must always be valid UTF-8, even if the
-//     Encoder or Decoder allows invalid UTF-8.
-//   - Only valid JSON is accepted. protojson accepts some invalid numbers,
-//     for example 0E.
-//   - The output is compact and deterministic, without random white space.
-//   - JSON nesting is limited to 10000 levels for Marshal and Unmarshal, also
-//     with a larger RecursionLimit. Lists and maps count as levels.
+//   - MarshalEncode and UnmarshalDecode follow the syntax options of the given
+//     jsontext Encoder or Decoder (such as indentation and duplicate names).
+//     Message strings must always be valid UTF-8, even when AllowInvalidUTF8
+//     is enabled.
+//   - Only valid JSON is accepted; malformed numbers like 1E are rejected.
+//   - Output is compact and deterministic, with no random white space.
+//   - Missing required fields return an error without writing partial output.
+//   - JSON nesting is capped at 10,000 levels for both Marshal and Unmarshal,
+//     including lists and maps.
 //
-// For the complete list, see
+// For details, see
 // https://github.com/protolayer/jsonwire/blob/main/docs/compatibility.md.
 //
-// This package requires Go 1.27 or newer.
+// Requires Go 1.27 or newer.
 package jsonwire
