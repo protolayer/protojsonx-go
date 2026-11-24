@@ -92,7 +92,26 @@ func TestMarshalWrite(t *testing.T) {
 	if !bytes.Equal(buf.Bytes(), want) {
 		t.Fatalf("got %q, want %q (no trailing newline)", buf.Bytes(), want)
 	}
+
+	// Errors before writing leave the writer untouched.
+	buf.Reset()
+	if err := (jsonwire.MarshalOptions{Indent: "x"}).MarshalWrite(&buf, newTestMessage()); err == nil || buf.Len() != 0 {
+		t.Fatalf("invalid indent: err=%v, wrote %q", err, buf.String())
+	}
+	if err := jsonwire.MarshalWrite(&buf, new(editionspb.Editions)); err == nil || buf.Len() != 0 {
+		t.Fatalf("missing required fields: err=%v, wrote %q", err, buf.String())
+	}
+
+	// Writer errors are returned directly.
+	writeErr := errors.New("write failed")
+	if err := jsonwire.MarshalWrite(failingWriter{err: writeErr}, newTestMessage()); !errors.Is(err, writeErr) {
+		t.Fatalf("failing writer: got %v, want %v", err, writeErr)
+	}
 }
+
+type failingWriter struct{ err error }
+
+func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
 
 func TestMarshalIndent(t *testing.T) {
 	t.Parallel()
@@ -265,6 +284,41 @@ func TestUTF8IsAlwaysChecked(t *testing.T) {
 			t.Errorf("Unmarshal(%q): want error", input)
 		}
 	}
+
+	// Invalid UTF-8 in a skipped unknown field is also rejected under a lenient decoder.
+	discardOpts := jsonwire.UnmarshalOptions{DiscardUnknown: true}
+	for _, input := range []string{
+		"{\"unknown\":\"bad \xff\"}",
+		"{\"unknown\":[\"ok\",{\"nested\":\"\xff\"}]}",
+	} {
+		var m testpb.TestAllTypesProto3
+		dec := jsontext.NewDecoder(strings.NewReader(input), lenient)
+		if err := discardOpts.UnmarshalDecode(dec, &m); err == nil {
+			t.Errorf("DiscardUnknown UnmarshalDecode(%q) with lenient decoder: want error", input)
+		}
+	}
+
+	// Legitimate U+FFFD replacement characters remain valid under a lenient
+	// encoder or decoder.
+	const replacement = "\ufffd"
+	validMsg := &testpb.TestAllTypesProto3{OptionalString: replacement}
+	var buf bytes.Buffer
+	if err := jsonwire.MarshalEncode(jsontext.NewEncoder(&buf, lenient), validMsg); err != nil {
+		t.Fatalf("MarshalEncode(U+FFFD) with lenient encoder: %v", err)
+	}
+	for _, input := range []string{
+		`{"optionalString":"\ufffd"}`,
+		"{\"optionalString\":\"" + replacement + "\"}",
+	} {
+		var m testpb.TestAllTypesProto3
+		dec := jsontext.NewDecoder(strings.NewReader(input), lenient)
+		if err := jsonwire.UnmarshalDecode(dec, &m); err != nil {
+			t.Fatalf("UnmarshalDecode(%q) with lenient decoder: %v", input, err)
+		}
+		if m.OptionalString != replacement {
+			t.Fatalf("UnmarshalDecode(%q): got %q, want %q", input, m.OptionalString, replacement)
+		}
+	}
 }
 
 func TestRecursionLimit(t *testing.T) {
@@ -399,6 +453,35 @@ func TestEncodingJSON(t *testing.T) {
 		}
 		if n := streamCalls.Load(); n != 4 {
 			t.Fatalf("%s: streaming methods were called %d times, want 4", api.name, n)
+		}
+
+		// JSON null clears an existing pointer field and round-trips nil pointers.
+		nullIn := container{ID: "empty"}
+		nullJSON, err := api.marshal(nullIn)
+		if err != nil {
+			t.Fatalf("%s marshal nil field: %v", api.name, err)
+		}
+		pop := container{
+			ID:       "x",
+			Message:  &streamMessage{msg: newTestMessage()},
+			Messages: []*streamMessage{{msg: newTestMessage()}},
+		}
+		if err := api.unmarshal(nullJSON, &pop); err != nil {
+			t.Fatalf("%s unmarshal null field: %v", api.name, err)
+		}
+		if pop.Message != nil || len(pop.Messages) != 0 {
+			t.Fatalf("%s unmarshal null field: got Message=%v, Messages=%v", api.name, pop.Message, pop.Messages)
+		}
+		pop = container{
+			ID:       "x",
+			Message:  &streamMessage{msg: newTestMessage()},
+			Messages: []*streamMessage{{msg: newTestMessage()}},
+		}
+		if err := api.unmarshal([]byte(`{"id":"empty","message":null,"messages":[null]}`), &pop); err != nil {
+			t.Fatalf("%s unmarshal explicit null: %v", api.name, err)
+		}
+		if pop.Message != nil || len(pop.Messages) != 1 || pop.Messages[0] != nil {
+			t.Fatalf("%s unmarshal explicit null: got Message=%v, Messages=%v", api.name, pop.Message, pop.Messages)
 		}
 	}
 }

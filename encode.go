@@ -63,9 +63,9 @@ type MarshalOptions struct {
 	// indented-form with every textual element on a new line. If Indent is an
 	// empty string, then an arbitrary indent is chosen.
 	//
-	// Multiline and Indent apply only to Marshal and MarshalWrite. With
-	// MarshalEncode, the options of the given jsontext.Encoder control the
-	// format.
+	// Multiline and Indent apply only to Marshal, MarshalAppend, Format, and
+	// MarshalWrite. With MarshalEncode, the options of the given
+	// jsontext.Encoder control the format.
 	Multiline bool
 
 	// Indent specifies the set of indentation characters to use in a multiline
