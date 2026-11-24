@@ -1,5 +1,8 @@
 # jsonwire
 
+[![CI](https://github.com/protolayer/jsonwire-go/actions/workflows/ci.yaml/badge.svg)](https://github.com/protolayer/jsonwire-go/actions/workflows/ci.yaml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/protolayer/jsonwire-go.svg)](https://pkg.go.dev/github.com/protolayer/jsonwire-go)
+
 ProtoJSON for `encoding/json/v2`. Produces the same output as `protojson`, streams directly through `jsontext`, and runs faster.
 
 ## Why
