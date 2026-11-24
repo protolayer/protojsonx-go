@@ -16,10 +16,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/protolayer/jsonwire/internal/gen/conformance/test_protos"
-	"github.com/protolayer/jsonwire/internal/gen/editions/golden"
-	testpb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire/internal/gen/jsonwire/test"
+	"github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
+	"github.com/protolayer/jsonwire-go/internal/gen/editions/golden"
+	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
 )
 
 // Messages are the message types that the tests use. They cover proto2,

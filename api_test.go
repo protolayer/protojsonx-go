@@ -26,10 +26,10 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/protolayer/jsonwire"
-	testpb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire/internal/gen/jsonwire/test"
-	"github.com/protolayer/jsonwire/internal/testutil"
+	"github.com/protolayer/jsonwire-go"
+	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
+	"github.com/protolayer/jsonwire-go/internal/testutil"
 )
 
 func newTestMessage() *testpb.TestAllTypesProto3 {

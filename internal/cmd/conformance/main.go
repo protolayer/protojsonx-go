@@ -14,11 +14,11 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/protolayer/jsonwire"
-	conformancepb "github.com/protolayer/jsonwire/internal/gen/conformance"
-	edition2023pb "github.com/protolayer/jsonwire/internal/gen/conformance/test_protos"
-	editionspb "github.com/protolayer/jsonwire/internal/gen/editions/golden"
-	testmessagespb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
+	"github.com/protolayer/jsonwire-go"
+	conformancepb "github.com/protolayer/jsonwire-go/internal/gen/conformance"
+	edition2023pb "github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
+	editionspb "github.com/protolayer/jsonwire-go/internal/gen/editions/golden"
+	testmessagespb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

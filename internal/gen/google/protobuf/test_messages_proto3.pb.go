@@ -2026,8 +2026,8 @@ const file_google_protobuf_test_messages_proto3_proto_rawDesc = "" +
 	"\vForeignEnum\x12\x0f\n" +
 	"\vFOREIGN_FOO\x10\x00\x12\x0f\n" +
 	"\vFOREIGN_BAR\x10\x01\x12\x0f\n" +
-	"\vFOREIGN_BAZ\x10\x02B\x8b\x02\n" +
-	"!com.protobuf_test_messages.proto3B\x17TestMessagesProto3ProtoH\x01P\x01Z;github.com/protolayer/jsonwire/internal/gen/google/protobuf\xf8\x01\x01\xa2\x02\x03PPX\xaa\x02\x1bProtobufTestMessages.Proto3\xca\x02\x1bProtobufTestMessages\\Proto3\xe2\x02'ProtobufTestMessages\\Proto3\\GPBMetadata\xea\x02\x1cProtobufTestMessages::Proto3b\x06proto3"
+	"\vFOREIGN_BAZ\x10\x02B\x8e\x02\n" +
+	"!com.protobuf_test_messages.proto3B\x17TestMessagesProto3ProtoH\x01P\x01Z>github.com/protolayer/jsonwire-go/internal/gen/google/protobuf\xf8\x01\x01\xa2\x02\x03PPX\xaa\x02\x1bProtobufTestMessages.Proto3\xca\x02\x1bProtobufTestMessages\\Proto3\xe2\x02'ProtobufTestMessages\\Proto3\\GPBMetadata\xea\x02\x1cProtobufTestMessages::Proto3b\x06proto3"
 
 var (
 	file_google_protobuf_test_messages_proto3_proto_rawDescOnce sync.Once

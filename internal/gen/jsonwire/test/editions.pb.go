@@ -449,8 +449,8 @@ const file_jsonwire_test_editions_proto_rawDesc = "" +
 	"\text_int32\x12\x17.jsonwire.test.Editions\x18d \x01(\x05R\bextInt32:Z\n" +
 	"\text_group\x12\x17.jsonwire.test.Editions\x18e \x01(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\bextGroup:8\n" +
 	"\vext_strings\x12\x17.jsonwire.test.Editions\x18f \x03(\tR\n" +
-	"extStringsB\xb2\x01\n" +
-	"\x11com.jsonwire.testB\rEditionsProtoP\x01Z9github.com/protolayer/jsonwire/internal/gen/jsonwire/test\xa2\x02\x03JTX\xaa\x02\rJsonwire.Test\xca\x02\rJsonwire\\Test\xe2\x02\x19Jsonwire\\Test\\GPBMetadata\xea\x02\x0eJsonwire::Testb\beditionsp\xe8\a"
+	"extStringsB\xb5\x01\n" +
+	"\x11com.jsonwire.testB\rEditionsProtoP\x01Z<github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test\xa2\x02\x03JTX\xaa\x02\rJsonwire.Test\xca\x02\rJsonwire\\Test\xe2\x02\x19Jsonwire\\Test\\GPBMetadata\xea\x02\x0eJsonwire::Testb\beditionsp\xe8\a"
 
 var (
 	file_jsonwire_test_editions_proto_rawDescOnce sync.Once

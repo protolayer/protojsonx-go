@@ -3639,8 +3639,8 @@ const file_editions_golden_test_messages_proto2_editions_proto_rawDesc = "" +
 	"\x0fextension_int32\x12:.protobuf_test_messages.editions.proto2.TestAllTypesProto2\x18x \x01(\x05R\x0eextensionInt32:\x95\x01\n" +
 	"\n" +
 	"groupfield\x12:.protobuf_test_messages.editions.proto2.TestAllTypesProto2\x18y \x01(\v22.protobuf_test_messages.editions.proto2.GroupFieldB\x05\xaa\x01\x02(\x02R\n" +
-	"groupfieldB\xca\x02\n" +
-	"*com.protobuf_test_messages.editions.proto2B\x1fTestMessagesProto2EditionsProtoH\x01P\x01Z;github.com/protolayer/jsonwire/internal/gen/editions/golden\xf8\x01\x01\xa2\x02\x03PEP\xaa\x02$ProtobufTestMessages.Editions.Proto2\xca\x02$ProtobufTestMessages\\Editions\\Proto2\xe2\x020ProtobufTestMessages\\Editions\\Proto2\\GPBMetadata\xea\x02&ProtobufTestMessages::Editions::Proto2\x92\x03\x06\x10\x02\x18\x02 \x03b\beditionsp\xe8\a"
+	"groupfieldB\xcd\x02\n" +
+	"*com.protobuf_test_messages.editions.proto2B\x1fTestMessagesProto2EditionsProtoH\x01P\x01Z>github.com/protolayer/jsonwire-go/internal/gen/editions/golden\xf8\x01\x01\xa2\x02\x03PEP\xaa\x02$ProtobufTestMessages.Editions.Proto2\xca\x02$ProtobufTestMessages\\Editions\\Proto2\xe2\x020ProtobufTestMessages\\Editions\\Proto2\\GPBMetadata\xea\x02&ProtobufTestMessages::Editions::Proto2\x92\x03\x06\x10\x02\x18\x02 \x03b\beditionsp\xe8\a"
 
 var (
 	file_editions_golden_test_messages_proto2_editions_proto_rawDescOnce sync.Once

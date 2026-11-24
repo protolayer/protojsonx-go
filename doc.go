@@ -44,7 +44,7 @@
 //     including lists and maps.
 //
 // For details, see
-// https://github.com/protolayer/jsonwire/blob/main/docs/compatibility.md.
+// https://github.com/protolayer/jsonwire-go/blob/main/docs/compatibility.md.
 //
 // Requires Go 1.27 or newer.
 package jsonwire

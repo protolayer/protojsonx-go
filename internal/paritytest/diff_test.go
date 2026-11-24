@@ -12,8 +12,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/protolayer/jsonwire"
-	"github.com/protolayer/jsonwire/internal/testutil"
+	"github.com/protolayer/jsonwire-go"
+	"github.com/protolayer/jsonwire-go/internal/testutil"
 )
 
 // The tests in this file compare jsonwire with protojson, which is the

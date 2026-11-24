@@ -12,10 +12,10 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/protolayer/jsonwire"
-	"github.com/protolayer/jsonwire/internal/gen/conformance/test_protos"
-	testpb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire/internal/gen/jsonwire/test"
+	"github.com/protolayer/jsonwire-go"
+	"github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
+	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
 )
 
 // edgeInputs are JSON inputs that test the parts of the ProtoJSON format that

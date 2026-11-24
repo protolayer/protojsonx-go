@@ -2026,8 +2026,8 @@ const file_editions_golden_test_messages_proto3_editions_proto_rawDesc = "" +
 	"\vForeignEnum\x12\x0f\n" +
 	"\vFOREIGN_FOO\x10\x00\x12\x0f\n" +
 	"\vFOREIGN_BAR\x10\x01\x12\x0f\n" +
-	"\vFOREIGN_BAZ\x10\x02B\xc6\x02\n" +
-	"*com.protobuf_test_messages.editions.proto3B\x1fTestMessagesProto3EditionsProtoH\x01P\x01Z;github.com/protolayer/jsonwire/internal/gen/editions/golden\xf8\x01\x01\xa2\x02\x03PEP\xaa\x02$ProtobufTestMessages.Editions.Proto3\xca\x02$ProtobufTestMessages\\Editions\\Proto3\xe2\x020ProtobufTestMessages\\Editions\\Proto3\\GPBMetadata\xea\x02&ProtobufTestMessages::Editions::Proto3\x92\x03\x02\b\x02b\beditionsp\xe8\a"
+	"\vFOREIGN_BAZ\x10\x02B\xc9\x02\n" +
+	"*com.protobuf_test_messages.editions.proto3B\x1fTestMessagesProto3EditionsProtoH\x01P\x01Z>github.com/protolayer/jsonwire-go/internal/gen/editions/golden\xf8\x01\x01\xa2\x02\x03PEP\xaa\x02$ProtobufTestMessages.Editions.Proto3\xca\x02$ProtobufTestMessages\\Editions\\Proto3\xe2\x020ProtobufTestMessages\\Editions\\Proto3\\GPBMetadata\xea\x02&ProtobufTestMessages::Editions::Proto3\x92\x03\x02\b\x02b\beditionsp\xe8\a"
 
 var (
 	file_editions_golden_test_messages_proto3_editions_proto_rawDescOnce sync.Once

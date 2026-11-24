@@ -18,9 +18,9 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/protolayer/jsonwire"
-	testpb "github.com/protolayer/jsonwire/internal/gen/google/protobuf"
-	"github.com/protolayer/jsonwire/internal/testutil"
+	"github.com/protolayer/jsonwire-go"
+	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
+	"github.com/protolayer/jsonwire-go/internal/testutil"
 )
 
 // benchMessages returns the benchmark messages in testdata/benchmark. They are

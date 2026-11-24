@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/protolayer/jsonwire/internal/testutil"
+	"github.com/protolayer/jsonwire-go/internal/testutil"
 )
 
 // FuzzUnmarshal checks that jsonwire and protojson agree on any input.

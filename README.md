@@ -26,7 +26,7 @@ See [Performance and tuning](docs/performance.md) for benchmarks and tuning tips
 ## Install
 
 ```sh
-go get github.com/protolayer/jsonwire
+go get github.com/protolayer/jsonwire-go
 ```
 
 Requires Go 1.27 or newer.
