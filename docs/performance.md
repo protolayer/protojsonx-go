@@ -4,16 +4,15 @@
 
 Compared with `protojson`:
 
-- **Unmarshal:** 31% to 39% faster, with 25% fewer allocations.
-- **Marshal:** 10% to 23% faster, with 2x to 4x fewer allocations.
-- **Faster for most message shapes tested.** On one CPU, long text that is not ASCII is slower, and so is unmarshal of long strings with many escape characters. See [Other message shapes](#other-message-shapes).
-- **With one option, a further 26% to 36% for large messages.** See [Tuning](#tuning).
+- **Unmarshal:** 25% to 36% faster, with fewer allocations.
+- **Marshal:** 12% to 23% faster, with 2x to 4x fewer allocations.
+- **With one option, a further 25% to 36% for large messages in structs.** See [Tuning](#tuning).
 
 ## Why it is faster
 
-- **One pass.** Inside `encoding/json`, `protojson` makes a separate `[]byte` that `encoding/json` then checks and copies. To unmarshal, the JSON is parsed two times. `jsonwire` writes straight into the encoder and parses only once.
-- **A faster JSON engine.** `jsonwire` uses `jsontext`, the optimized engine of `encoding/json/v2`. `protojson` uses its own, older JSON code.
-- **Fewer allocations.** Field names and numbers are read directly from the decoder's buffer. Numbers, bytes, and timestamps are written directly into the encoder's buffer. Memory is reused between calls.
+- **One pass.** Inside `encoding/json`, `protojson` builds a separate `[]byte` that `encoding/json` then validates and copies. On unmarshal, the JSON is parsed twice. `jsonwire` streams directly through `jsontext` and parses once.
+- **Faster JSON engine.** `jsonwire` uses `jsontext` from `encoding/json/v2` instead of `protojson`'s older JSON parser and formatter.
+- **Fewer allocations.** Numbers, bytes, durations, and timestamps are written directly into the encoder buffer, and small encoder states are reused between calls.
 
 ## Benchmarks
 
@@ -26,55 +25,29 @@ The benchmarks use `TestAllTypesProto3` from the protobuf conformance suite ([pr
 
 | Benchmark | `protojson` | `jsonwire` | Change | Allocations |
 | --- | ---: | ---: | ---: | ---: |
-| Marshal, small | 3.00 us | 2.69 us | -10% | 32 -> 8 |
-| Marshal, large | 21.4 us | 16.6 us | -23% | 269 -> 92 |
-| Marshal in a struct, small | 3.59 us | 3.01 us | -16% | 35 -> 10 |
-| Marshal in a struct, large | 33.5 us | 26.3 us | -21% | 371 -> 192 |
-| Unmarshal, small | 3.04 us | 2.09 us | -31% | 56 -> 43 |
-| Unmarshal, large | 42.2 us | 25.7 us | -39% | 707 -> 499 |
-| Unmarshal in a struct, small | 3.53 us | 2.30 us | -35% | 58 -> 44 |
-| Unmarshal in a struct, large | 53.7 us | 35.2 us | -34% | 807 -> 598 |
+| Marshal, small | 3.10 us | 2.74 us | -12% | 32 -> 8 |
+| Marshal, large | 22.0 us | 16.9 us | -23% | 269 -> 92 |
+| Marshal in a struct, small | 3.55 us | 2.91 us | -18% | 35 -> 10 |
+| Marshal in a struct, large | 34.2 us | 27.5 us | -20% | 371 -> 192 |
+| Unmarshal, small | 3.08 us | 2.31 us | -25% | 56 -> 53 |
+| Unmarshal, large | 42.9 us | 27.6 us | -36% | 707 -> 604 |
+| Unmarshal in a struct, small | 3.59 us | 2.45 us | -32% | 58 -> 49 |
+| Unmarshal in a struct, large | 54.7 us | 37.0 us | -32% | 807 -> 696 |
 
-Medians of 10 runs on an Apple M4 Pro, Go 1.27.4, `-cpu=1`. The spread between runs is at most 2%. To reproduce, run `make bench`, and `make bench-parallel` for the parallel results.
+Medians of 10 runs on an Apple M4 Pro, Go 1.27.4, `-cpu=1`. To reproduce, run `make bench` (and `make bench-parallel` for multi-CPU shapes). Most of the remaining cost is protobuf reflection.
 
-Most of the remaining cost is protobuf reflection.
+### Edge cases
 
-### Other message shapes
-
-To check that the results are not specific to one message, `BenchmarkShapes` measures other shapes and sizes. The table gives the change compared with `protojson`, on one CPU (`make bench`) and with all 14 CPUs at the same time (`make bench-parallel`), as medians of 6 runs:
-
-| Shape | Marshal, 1 CPU | Unmarshal, 1 CPU | Marshal, all CPUs | Unmarshal, all CPUs |
-| --- | ---: | ---: | ---: | ---: |
-| A list of 20 records (strings, numbers, a timestamp) | -18% | -35% | -31% | -25% |
-| A list of 5000 records (about 1 MB of JSON) | -16% | -37% | -20% | -26% |
-| 500 strings with escape characters | -25% | -5% | -62% | -32% |
-| 6000 numbers in packed fields | -38% | -45% | -52% | -39% |
-| One 64 KB bytes field | -31% | -28% | -38% | -38% |
-| One 600 KB bytes field | -34% | -28% | -46% | -29% |
-| One 2 MB bytes field | -34% | -28% | -45% | -20% |
-| The large message as a dynamic message (`dynamicpb`) | -25% | -32% | -42% | -24% |
-| 1000 `Any` values that hold a `Duration` | -33% | -10% | -1% | -3% |
-| 10000 integers written as `123.0` | n/a | -32% | n/a | -30% |
-| One 1 MB string with many escape characters | -36% | **+11%** | -74% | -52% |
-| One 1 MB string of Japanese text | **+39%** | **+24%** | -19% | -2% |
-
-`jsonwire` allocates fewer bytes for each of these shapes, except 2% more for unmarshal of the `Any` values. With all CPUs, fewer allocations count for more, because all CPUs share the memory allocator and the garbage collector.
-
-Two shapes are slower on one CPU:
-
-- **Text that is not ASCII.** `jsontext` checks UTF-8 one character at a time for characters outside ASCII. For short strings, the gains on the rest of the message hide this cost. For long text, `protojson` is faster on one CPU. The cost is inside `jsontext`, and `jsonwire` cannot skip the check.
-- **Unmarshal of long strings with many escape characters.** Both packages spend most of the time on the same unescaping work, and `jsontext` is a little slower at it.
-
-These are edge cases. Most messages have many fields with short strings, numbers, and nested messages, and for these `jsonwire` is faster. The slowdown matters only when long text strings make up most of the message, for example messages that carry whole documents in Chinese, Japanese, or Korean. For such messages, measure both packages with real data.
+`BenchmarkShapes` also tests lists, packed numbers, dynamic messages, `Any`, large `bytes` fields, and 1 MB strings. `jsonwire` is faster for typical structured messages. For messages dominated by a single large string (especially non-ASCII text or heavy escaping) or unmarshaling a large `bytes` field, `protojson` can be faster on one CPU. Measure both packages with your data if your messages have that shape.
 
 ## Tuning
 
 ### Turn off the duplicate name check
 
-`encoding/json/v2` checks every JSON object for duplicate names by default. For large messages, this check is expensive. `jsonwire` already rejects duplicate fields and map keys, so the check is not necessary for messages:
+`encoding/json/v2` checks every JSON object for duplicate names by default. For large messages, this check is expensive. `jsonwire` already rejects duplicate fields and map keys, so you can disable the check:
 
 ```go
 b, err := json.Marshal(v, jsontext.AllowDuplicateNames(true))
 ```
 
-For the large message, marshal in a struct is 36% faster and unmarshal is 26% faster. For the small message, both are 5% faster. The option applies to the whole call, so other types in the same value lose the check too.
+For the large message in a struct, marshal is 36% faster and unmarshal is 25% faster. For the small message, marshal is 5% faster and unmarshal is 3% faster. The option applies to the whole call, so other types in the same value skip the check too.

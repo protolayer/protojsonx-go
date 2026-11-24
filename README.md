@@ -12,14 +12,14 @@ This package adds the streaming API, so messages go straight through the encoder
 
 Compared with `protojson`:
 
-- **Unmarshal:** about 35% faster
-- **Marshal:** 10% to 25% faster, with about 3x fewer allocations
+- **Unmarshal:** 25% to 36% faster
+- **Marshal:** 12% to 23% faster, with 2x to 4x fewer allocations
 
 Why it is faster:
 
 - **One pass.** No extra `[]byte` to copy and parse again inside `encoding/json`.
 - **Faster JSON engine.** Built on `jsontext` from `encoding/json/v2`.
-- **Fewer allocations.** Reads and writes in place, and reuses memory.
+- **Fewer allocations.** Formats values into the encoder buffer and reuses encoder state.
 
 [More about performance](docs/performance.md)
 
