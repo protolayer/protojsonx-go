@@ -34,9 +34,15 @@ Requires Go 1.27 or newer.
 ## Use
 
 ```go
-b, err := jsonwire.Marshal(msg)
-err = jsonwire.Unmarshal(b, msg)
+msg, _ := structpb.NewStruct(map[string]any{"user": "alice", "count": 3})
+
+b, err := jsonwire.Marshal(msg) // {"count":3,"user":"alice"}
+
+var out structpb.Struct
+err = jsonwire.Unmarshal(b, &out)
 ```
+
+[Run a complete example on the Go Playground](https://go.dev/play/p/vqkHbPGN3So).
 
 To use a message inside `encoding/json`:
 
