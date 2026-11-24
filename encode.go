@@ -5,7 +5,7 @@
 // This file is a port of google.golang.org/protobuf/encoding/protojson to
 // encoding/json/jsontext.
 
-package jsonwire
+package protojsonx
 
 import (
 	"bytes"
@@ -641,7 +641,7 @@ func wrapInvalidUTF8(err error, s, field string) error {
 }
 
 // isMessageSet reports whether the message uses the proto1 MessageSet wire
-// format, which jsonwire does not support.
+// format, which protojsonx does not support.
 func isMessageSet(md protoreflect.MessageDescriptor) bool {
 	xmd, ok := md.(interface{ IsMessageSet() bool })
 	return ok && xmd.IsMessageSet()
@@ -649,10 +649,10 @@ func isMessageSet(md protoreflect.MessageDescriptor) bool {
 
 // errorf returns an error with the package prefix.
 func errorf(format string, args ...any) error {
-	return &wireError{err: fmt.Errorf("jsonwire: "+format, args...)}
+	return &wireError{err: fmt.Errorf("protojsonx: "+format, args...)}
 }
 
-// wireError is the error type of jsonwire. Like protojson errors, it matches
+// wireError is the error type of protojsonx. Like protojson errors, it matches
 // proto.Error with errors.Is.
 type wireError struct {
 	err error

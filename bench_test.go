@@ -1,4 +1,4 @@
-package jsonwire_test
+package protojsonx_test
 
 import (
 	"bytes"
@@ -18,9 +18,9 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/protolayer/jsonwire-go"
-	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
-	"github.com/protolayer/jsonwire-go/internal/testutil"
+	"github.com/protolayer/protojsonx-go"
+	testpb "github.com/protolayer/protojsonx-go/internal/gen/google/protobuf"
+	"github.com/protolayer/protojsonx-go/internal/testutil"
 )
 
 // benchMessages returns the benchmark messages in testdata/benchmark. They are
@@ -61,26 +61,26 @@ type protojsonContainer struct {
 	Message *protojsonMessage `json:"message"`
 }
 
-// jsonwireMessage connects a message to encoding/json the way generated code
-// does with jsonwire: MarshalJSONTo and UnmarshalJSONFrom. Unlike the test
+// protojsonxMessage connects a message to encoding/json the way generated code
+// does with protojsonx: MarshalJSONTo and UnmarshalJSONFrom. Unlike the test
 // type streamMessage, it does not count calls, so that the benchmark measures
-// only jsonwire.
-type jsonwireMessage struct {
+// only protojsonx.
+type protojsonxMessage struct {
 	msg *testpb.TestAllTypesProto3
 }
 
-func (s *jsonwireMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
-	return jsonwire.MarshalEncode(enc, s.msg)
+func (s *protojsonxMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
+	return protojsonx.MarshalEncode(enc, s.msg)
 }
 
-func (s *jsonwireMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
+func (s *protojsonxMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 	s.msg = new(testpb.TestAllTypesProto3)
-	return jsonwire.UnmarshalDecode(dec, s.msg)
+	return protojsonx.UnmarshalDecode(dec, s.msg)
 }
 
-type jsonwireContainer struct {
-	ID      string           `json:"id"`
-	Message *jsonwireMessage `json:"message"`
+type protojsonxContainer struct {
+	ID      string             `json:"id"`
+	Message *protojsonxMessage `json:"message"`
 }
 
 func BenchmarkMarshal(b *testing.B) {
@@ -92,9 +92,9 @@ func BenchmarkMarshal(b *testing.B) {
 				}
 			}
 		})
-		b.Run(name+"/jsonwire", func(b *testing.B) {
+		b.Run(name+"/protojsonx", func(b *testing.B) {
 			for b.Loop() {
-				if _, err := jsonwire.Marshal(m); err != nil {
+				if _, err := protojsonx.Marshal(m); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -109,8 +109,8 @@ func BenchmarkMarshal(b *testing.B) {
 				}
 			}
 		})
-		b.Run(name+"/json.Marshal+jsonwire", func(b *testing.B) {
-			v := jsonwireContainer{ID: "x", Message: &jsonwireMessage{msg: m}}
+		b.Run(name+"/json.Marshal+protojsonx", func(b *testing.B) {
+			v := protojsonxContainer{ID: "x", Message: &protojsonxMessage{msg: m}}
 			for b.Loop() {
 				if _, err := jsonv2.Marshal(v); err != nil {
 					b.Fatal(err)
@@ -118,8 +118,8 @@ func BenchmarkMarshal(b *testing.B) {
 			}
 		})
 		// The tuning option in docs/performance.md.
-		b.Run(name+"/json.Marshal+jsonwire,AllowDuplicateNames", func(b *testing.B) {
-			v := jsonwireContainer{ID: "x", Message: &jsonwireMessage{msg: m}}
+		b.Run(name+"/json.Marshal+protojsonx,AllowDuplicateNames", func(b *testing.B) {
+			v := protojsonxContainer{ID: "x", Message: &protojsonxMessage{msg: m}}
 			for b.Loop() {
 				if _, err := jsonv2.Marshal(v, jsontext.AllowDuplicateNames(true)); err != nil {
 					b.Fatal(err)
@@ -136,7 +136,7 @@ func BenchmarkUnmarshal(b *testing.B) {
 			b.Fatal(err)
 		}
 		data = testutil.Compact(b, data)
-		wrapped, err := jsonv2.Marshal(jsonwireContainer{ID: "x", Message: &jsonwireMessage{msg: m}})
+		wrapped, err := jsonv2.Marshal(protojsonxContainer{ID: "x", Message: &protojsonxMessage{msg: m}})
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -148,10 +148,10 @@ func BenchmarkUnmarshal(b *testing.B) {
 				}
 			}
 		})
-		b.Run(name+"/jsonwire", func(b *testing.B) {
+		b.Run(name+"/protojsonx", func(b *testing.B) {
 			for b.Loop() {
 				var out testpb.TestAllTypesProto3
-				if err := jsonwire.Unmarshal(data, &out); err != nil {
+				if err := protojsonx.Unmarshal(data, &out); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -164,17 +164,17 @@ func BenchmarkUnmarshal(b *testing.B) {
 				}
 			}
 		})
-		b.Run(name+"/json.Unmarshal+jsonwire", func(b *testing.B) {
+		b.Run(name+"/json.Unmarshal+protojsonx", func(b *testing.B) {
 			for b.Loop() {
-				var out jsonwireContainer
+				var out protojsonxContainer
 				if err := jsonv2.Unmarshal(wrapped, &out); err != nil {
 					b.Fatal(err)
 				}
 			}
 		})
-		b.Run(name+"/json.Unmarshal+jsonwire,AllowDuplicateNames", func(b *testing.B) {
+		b.Run(name+"/json.Unmarshal+protojsonx,AllowDuplicateNames", func(b *testing.B) {
 			for b.Loop() {
-				var out jsonwireContainer
+				var out protojsonxContainer
 				if err := jsonv2.Unmarshal(wrapped, &out, jsontext.AllowDuplicateNames(true)); err != nil {
 					b.Fatal(err)
 				}
@@ -185,8 +185,8 @@ func BenchmarkUnmarshal(b *testing.B) {
 
 // Ensure that the benchmark types satisfy the json/v2 interfaces.
 var (
-	_ jsonv2.MarshalerTo     = (*jsonwireMessage)(nil)
-	_ jsonv2.UnmarshalerFrom = (*jsonwireMessage)(nil)
+	_ jsonv2.MarshalerTo     = (*protojsonxMessage)(nil)
+	_ jsonv2.UnmarshalerFrom = (*protojsonxMessage)(nil)
 )
 
 // benchShape is a message for BenchmarkShapes. The input for Unmarshal is the
@@ -269,7 +269,7 @@ func benchShapes(b *testing.B) map[string]benchShape {
 	}
 }
 
-// BenchmarkShapes compares protojson and jsonwire for each shape. Run it with
+// BenchmarkShapes compares protojson and protojsonx for each shape. Run it with
 // -cpu=1. The Parallel variants use all CPUs; run them without -cpu.
 func BenchmarkShapes(b *testing.B) {
 	for name, shape := range benchShapes(b) {
@@ -288,7 +288,7 @@ func BenchmarkShapes(b *testing.B) {
 			unmarshal func([]byte, proto.Message) error
 		}{
 			{"protojson", protojson.Marshal, protojson.Unmarshal},
-			{"jsonwire", jsonwire.Marshal, jsonwire.Unmarshal},
+			{"protojsonx", protojsonx.Marshal, protojsonx.Unmarshal},
 		}
 		// A shape with its own input tests only Unmarshal.
 		marshal := shape.input == nil

@@ -756,8 +756,8 @@ const file_conformance_conformance_proto_rawDesc = "" +
 	"\tJSON_TEST\x10\x02\x12$\n" +
 	" JSON_IGNORE_UNKNOWN_PARSING_TEST\x10\x03\x12\r\n" +
 	"\tJSPB_TEST\x10\x04\x12\x14\n" +
-	"\x10TEXT_FORMAT_TEST\x10\x05B\xab\x01\n" +
-	"\x0fcom.conformanceB\x10ConformanceProtoP\x01Z:github.com/protolayer/jsonwire-go/internal/gen/conformance\xa2\x02\x03CXX\xaa\x02\vConformance\xca\x02\vConformance\xe2\x02\x17Conformance\\GPBMetadata\xea\x02\vConformanceb\x06proto3"
+	"\x10TEXT_FORMAT_TEST\x10\x05B\xad\x01\n" +
+	"\x0fcom.conformanceB\x10ConformanceProtoP\x01Z<github.com/protolayer/protojsonx-go/internal/gen/conformance\xa2\x02\x03CXX\xaa\x02\vConformance\xca\x02\vConformance\xe2\x02\x17Conformance\\GPBMetadata\xea\x02\vConformanceb\x06proto3"
 
 var (
 	file_conformance_conformance_proto_rawDescOnce sync.Once

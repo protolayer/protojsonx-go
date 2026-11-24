@@ -2,8 +2,8 @@
 //
 // It reads length-prefixed ConformanceRequest messages from stdin and writes
 // length-prefixed ConformanceResponse messages to stdout until stdin is closed.
-// The JSONWIRE_CONFORMANCE_IMPL environment variable selects the ProtoJSON
-// implementation: jsonwire (this module, the default) or protojson (upstream).
+// The PROTOJSONX_CONFORMANCE_IMPL environment variable selects the ProtoJSON
+// implementation: protojsonx (this module, the default) or protojson (upstream).
 package main
 
 import (
@@ -14,30 +14,30 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/protolayer/jsonwire-go"
-	conformancepb "github.com/protolayer/jsonwire-go/internal/gen/conformance"
-	edition2023pb "github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
-	editionspb "github.com/protolayer/jsonwire-go/internal/gen/editions/golden"
-	testmessagespb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
+	"github.com/protolayer/protojsonx-go"
+	conformancepb "github.com/protolayer/protojsonx-go/internal/gen/conformance"
+	edition2023pb "github.com/protolayer/protojsonx-go/internal/gen/conformance/test_protos"
+	editionspb "github.com/protolayer/protojsonx-go/internal/gen/editions/golden"
+	testmessagespb "github.com/protolayer/protojsonx-go/internal/gen/google/protobuf"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	implJSONWire  = "jsonwire"
-	implProtoJSON = "protojson"
+	implProtoJSONX = "protojsonx"
+	implProtoJSON  = "protojson"
 )
 
 func main() {
 	// The runner starts the testee without arguments, so the implementation
 	// comes from the environment.
-	impl := os.Getenv("JSONWIRE_CONFORMANCE_IMPL")
+	impl := os.Getenv("PROTOJSONX_CONFORMANCE_IMPL")
 	if impl == "" {
-		impl = implJSONWire
+		impl = implProtoJSONX
 	}
 	codec, err := newCodec(impl)
 	if err != nil {
-		slog.Error("invalid JSONWIRE_CONFORMANCE_IMPL", "error", err)
+		slog.Error("invalid PROTOJSONX_CONFORMANCE_IMPL", "error", err)
 		os.Exit(2)
 	}
 	if err := serve(os.Stdin, os.Stdout, codec); err != nil {
@@ -54,11 +54,11 @@ type codec struct {
 
 func newCodec(impl string) (codec, error) {
 	switch impl {
-	case implJSONWire:
+	case implProtoJSONX:
 		return codec{
-			marshal: jsonwire.Marshal,
+			marshal: protojsonx.Marshal,
 			unmarshal: func(data []byte, message proto.Message, discardUnknown bool) error {
-				return jsonwire.UnmarshalOptions{DiscardUnknown: discardUnknown}.Unmarshal(data, message)
+				return protojsonx.UnmarshalOptions{DiscardUnknown: discardUnknown}.Unmarshal(data, message)
 			},
 		}, nil
 	case implProtoJSON:

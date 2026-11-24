@@ -1,7 +1,7 @@
-# jsonwire
+# protojsonx
 
-[![CI](https://github.com/protolayer/jsonwire-go/actions/workflows/ci.yaml/badge.svg)](https://github.com/protolayer/jsonwire-go/actions/workflows/ci.yaml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/protolayer/jsonwire-go.svg)](https://pkg.go.dev/github.com/protolayer/jsonwire-go)
+[![CI](https://github.com/protolayer/protojsonx-go/actions/workflows/ci.yaml/badge.svg)](https://github.com/protolayer/protojsonx-go/actions/workflows/ci.yaml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/protolayer/protojsonx-go.svg)](https://pkg.go.dev/github.com/protolayer/protojsonx-go)
 
 ProtoJSON for `encoding/json/v2`. Produces the same output as `protojson`, streams directly through `jsontext`, and runs faster.
 
@@ -9,7 +9,7 @@ ProtoJSON for `encoding/json/v2`. Produces the same output as `protojson`, strea
 
 `protojson` does not yet support the streaming API in `encoding/json/v2` ([golang/protobuf#1673](https://github.com/golang/protobuf/issues/1673)). When a protobuf message sits inside a Go struct, `protojson` encodes it to a separate `[]byte` that `encoding/json` must validate and copy. On unmarshal, the JSON is parsed twice.
 
-`jsonwire` streams messages directly through `jsontext.Encoder` and `jsontext.Decoder`.
+`protojsonx` streams messages directly through `jsontext.Encoder` and `jsontext.Decoder`.
 
 ## Performance
 
@@ -29,7 +29,7 @@ See [Performance and tuning](docs/performance.md) for benchmarks and tuning tips
 ## Install
 
 ```sh
-go get github.com/protolayer/jsonwire-go
+go get github.com/protolayer/protojsonx-go
 ```
 
 Requires Go 1.27 or newer.
@@ -39,23 +39,35 @@ Requires Go 1.27 or newer.
 ```go
 msg, _ := structpb.NewStruct(map[string]any{"user": "alice", "count": 3})
 
-b, err := jsonwire.Marshal(msg) // {"count":3,"user":"alice"}
+b, err := protojsonx.Marshal(msg) // {"count":3,"user":"alice"}
 
 var out structpb.Struct
-err = jsonwire.Unmarshal(b, &out)
+err = protojsonx.Unmarshal(b, &out)
 ```
 
-[Run a complete example on the Go Playground](https://go.dev/play/p/YzaCMMdyBo9).
+To stream any `proto.Message` inside a Go struct with `encoding/json/v2`, pass `MarshalEncode` and `UnmarshalDecode` directly with no wrapper types or code generation:
 
-To stream a protobuf message inside a Go struct with `encoding/json` (v1 or v2):
+```go
+opts := json.JoinOptions(
+	json.WithMarshalers(json.MarshalToFunc(protojsonx.MarshalEncode)),
+	json.WithUnmarshalers(json.UnmarshalFromFunc(protojsonx.UnmarshalDecode)),
+)
+
+b, err := json.Marshal(v, opts)
+err = json.Unmarshal(b, &v, opts)
+```
+
+[Run a complete example on the Go Playground](https://go.dev/play/p/NS6YM8QWi5P).
+
+For `encoding/json` v1 compatibility, or to avoid passing options on each call, implement `MarshalJSONTo` and `UnmarshalJSONFrom` on your message types:
 
 ```go
 func (x *MyMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
-	return jsonwire.MarshalEncode(enc, x)
+	return protojsonx.MarshalEncode(enc, x)
 }
 
 func (x *MyMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
-	return jsonwire.UnmarshalDecode(dec, x)
+	return protojsonx.UnmarshalDecode(dec, x)
 }
 ```
 

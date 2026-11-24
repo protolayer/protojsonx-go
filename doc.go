@@ -1,4 +1,4 @@
-// Package jsonwire marshals and unmarshals protocol buffer messages in the
+// Package protojsonx marshals and unmarshals protocol buffer messages in the
 // ProtoJSON format using encoding/json/jsontext.
 //
 // It produces the same format as google.golang.org/protobuf/encoding/protojson,
@@ -18,20 +18,31 @@
 //
 // # Use with encoding/json
 //
-// Implement json.MarshalerTo and json.UnmarshalerFrom on a message type to
-// stream it through json.Marshal and json.Unmarshal (both v1 and v2):
+// In encoding/json/v2, pass [MarshalEncode] and [UnmarshalDecode] directly via
+// json.WithMarshalers and json.WithUnmarshalers to stream any proto.Message
+// without wrapper types or code generation:
+//
+//	opts := json.JoinOptions(
+//		json.WithMarshalers(json.MarshalToFunc(protojsonx.MarshalEncode)),
+//		json.WithUnmarshalers(json.UnmarshalFromFunc(protojsonx.UnmarshalDecode)),
+//	)
+//	b, err := json.Marshal(v, opts)
+//	err = json.Unmarshal(b, &v, opts)
+//
+// To also support encoding/json v1 or option-free calls, implement
+// json.MarshalerTo and json.UnmarshalerFrom on a message type:
 //
 //	func (x *MyMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
-//		return jsonwire.MarshalEncode(enc, x)
+//		return protojsonx.MarshalEncode(enc, x)
 //	}
 //
 //	func (x *MyMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
-//		return jsonwire.UnmarshalDecode(dec, x)
+//		return protojsonx.UnmarshalDecode(dec, x)
 //	}
 //
 // # Differences from protojson
 //
-// jsonwire passes the protobuf conformance suite. The main differences are:
+// protojsonx passes the protobuf conformance suite. The main differences are:
 //
 //   - MarshalEncode and UnmarshalDecode follow the syntax options of the given
 //     jsontext Encoder or Decoder (such as indentation and duplicate names).
@@ -44,7 +55,7 @@
 //     including lists and maps.
 //
 // For details, see
-// https://github.com/protolayer/jsonwire-go/blob/main/docs/compatibility.md.
+// https://github.com/protolayer/protojsonx-go/blob/main/docs/compatibility.md.
 //
 // Requires Go 1.27 or newer.
-package jsonwire
+package protojsonx

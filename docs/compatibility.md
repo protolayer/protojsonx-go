@@ -1,6 +1,6 @@
 # Compatibility with protojson
 
-`jsonwire` is a port of `protojson` to `encoding/json/jsontext`. It passes the same protobuf conformance suite and matches `protojson` on well-formed messages and JSON.
+`protojsonx` is a port of `protojson` to `encoding/json/jsontext`. It passes the same protobuf conformance suite and matches `protojson` on well-formed messages and JSON.
 
 The five differences below only show up in edge cases or when you pass a custom `jsontext` encoder or decoder.
 
@@ -20,7 +20,7 @@ One visible effect is duplicate object names. `encoding/json/v2` rejects duplica
 
 ```go
 input := `{"unknown":1,"unknown":2}`
-opts := jsonwire.UnmarshalOptions{DiscardUnknown: true}
+opts := protojsonx.UnmarshalOptions{DiscardUnknown: true}
 
 opts.Unmarshal([]byte(input), msg)                                       // ok, like protojson
 opts.UnmarshalDecode(jsontext.NewDecoder(strings.NewReader(input)), msg) // error: duplicate name
@@ -35,21 +35,21 @@ UTF-8 is the one exception: message strings must always be valid UTF-8, even whe
 `jsontext` accepts only valid JSON. Some malformed numbers that `protojson` accepts are rejected:
 
 ```
-{"count":1E}    protojson: count = 1    jsonwire: error
+{"count":1E}    protojson: count = 1    protojsonx: error
 ```
 
 ## Deterministic output
 
-`protojson` inserts random white space so callers cannot rely on exact byte output. `jsonwire` emits compact, deterministic JSON instead: fields appear in declaration order, extensions are sorted by full name, and map entries are sorted by key.
+`protojson` inserts random white space so callers cannot rely on exact byte output. `protojsonx` emits compact, deterministic JSON instead: fields appear in declaration order, extensions are sorted by full name, and map entries are sorted by key.
 
 ```
 protojson:  {"a":1,  "b":2}
-jsonwire:   {"a":1,"b":2}
+protojsonx:   {"a":1,"b":2}
 ```
 
 ## No partial output on missing required fields
 
-When a required field is missing, `protojson.Marshal` and `MarshalAppend` return both the encoded bytes and an error. `jsonwire` checks required fields before writing, so `Marshal` and `MarshalAppend` return `nil` with the error, and `MarshalEncode` and `MarshalWrite` write nothing.
+When a required field is missing, `protojson.Marshal` and `MarshalAppend` return both the encoded bytes and an error. `protojsonx` checks required fields before writing, so `Marshal` and `MarshalAppend` return `nil` with the error, and `MarshalEncode` and `MarshalWrite` write nothing.
 
 This avoids leaving a broken partial value inside a larger JSON stream. Set `AllowPartial: true` if you want output with missing required fields, or use `Format` for debugging.
 

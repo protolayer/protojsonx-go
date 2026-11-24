@@ -5,7 +5,7 @@
 // This file is a port of google.golang.org/protobuf/encoding/protojson to
 // encoding/json/jsontext.
 
-package jsonwire
+package protojsonx
 
 import (
 	"bytes"
@@ -184,7 +184,7 @@ func (d decoder) newError(format string, args ...any) error {
 	if ptr := d.dec.StackPointer(); ptr != "" {
 		msg += " (at " + string(ptr) + ")"
 	}
-	return &wireError{err: errors.New("jsonwire: " + msg)}
+	return &wireError{err: errors.New("protojsonx: " + msg)}
 }
 
 // unexpectedTokenError returns a syntax error for the given unexpected token.

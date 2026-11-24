@@ -1,4 +1,4 @@
-module github.com/protolayer/jsonwire-go
+module github.com/protolayer/protojsonx-go
 
 go 1.27
 

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: jsonwire/test/editions.proto
+// source: protojsonx/test/editions.proto
 
 package test
 
@@ -51,11 +51,11 @@ func (x Editions_Open) String() string {
 }
 
 func (Editions_Open) Descriptor() protoreflect.EnumDescriptor {
-	return file_jsonwire_test_editions_proto_enumTypes[0].Descriptor()
+	return file_protojsonx_test_editions_proto_enumTypes[0].Descriptor()
 }
 
 func (Editions_Open) Type() protoreflect.EnumType {
-	return &file_jsonwire_test_editions_proto_enumTypes[0]
+	return &file_protojsonx_test_editions_proto_enumTypes[0]
 }
 
 func (x Editions_Open) Number() protoreflect.EnumNumber {
@@ -64,7 +64,7 @@ func (x Editions_Open) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Editions_Open.Descriptor instead.
 func (Editions_Open) EnumDescriptor() ([]byte, []int) {
-	return file_jsonwire_test_editions_proto_rawDescGZIP(), []int{0, 0}
+	return file_protojsonx_test_editions_proto_rawDescGZIP(), []int{0, 0}
 }
 
 type Editions_Closed int32
@@ -97,11 +97,11 @@ func (x Editions_Closed) String() string {
 }
 
 func (Editions_Closed) Descriptor() protoreflect.EnumDescriptor {
-	return file_jsonwire_test_editions_proto_enumTypes[1].Descriptor()
+	return file_protojsonx_test_editions_proto_enumTypes[1].Descriptor()
 }
 
 func (Editions_Closed) Type() protoreflect.EnumType {
-	return &file_jsonwire_test_editions_proto_enumTypes[1]
+	return &file_protojsonx_test_editions_proto_enumTypes[1]
 }
 
 func (x Editions_Closed) Number() protoreflect.EnumNumber {
@@ -110,7 +110,7 @@ func (x Editions_Closed) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Editions_Closed.Descriptor instead.
 func (Editions_Closed) EnumDescriptor() ([]byte, []int) {
-	return file_jsonwire_test_editions_proto_rawDescGZIP(), []int{0, 1}
+	return file_protojsonx_test_editions_proto_rawDescGZIP(), []int{0, 1}
 }
 
 // Editions covers the editions features that the conformance test messages do
@@ -123,9 +123,9 @@ type Editions struct {
 	ExplicitInt32     *int32                    `protobuf:"varint,3,opt,name=explicit_int32,json=explicitInt32" json:"explicit_int32,omitempty"`
 	ImplicitInt32     int32                     `protobuf:"varint,4,opt,name=implicit_int32,json=implicitInt32" json:"implicit_int32,omitempty"`
 	DefaultString     *string                   `protobuf:"bytes,5,opt,name=default_string,json=defaultString,def=hello" json:"default_string,omitempty"`
-	ClosedEnum        *Editions_Closed          `protobuf:"varint,6,opt,name=closed_enum,json=closedEnum,enum=jsonwire.test.Editions_Closed" json:"closed_enum,omitempty"`
-	RepeatedClosed    []Editions_Closed         `protobuf:"varint,7,rep,packed,name=repeated_closed,json=repeatedClosed,enum=jsonwire.test.Editions_Closed" json:"repeated_closed,omitempty"`
-	OpenEnum          *Editions_Open            `protobuf:"varint,8,opt,name=open_enum,json=openEnum,enum=jsonwire.test.Editions_Open" json:"open_enum,omitempty"`
+	ClosedEnum        *Editions_Closed          `protobuf:"varint,6,opt,name=closed_enum,json=closedEnum,enum=protojsonx.test.Editions_Closed" json:"closed_enum,omitempty"`
+	RepeatedClosed    []Editions_Closed         `protobuf:"varint,7,rep,packed,name=repeated_closed,json=repeatedClosed,enum=protojsonx.test.Editions_Closed" json:"repeated_closed,omitempty"`
+	OpenEnum          *Editions_Open            `protobuf:"varint,8,opt,name=open_enum,json=openEnum,enum=protojsonx.test.Editions_Open" json:"open_enum,omitempty"`
 	Delimited         *Editions_Group           `protobuf:"group,9,opt,name=Group,json=delimited" json:"delimited,omitempty"`
 	RepeatedDelimited []*Editions_Group         `protobuf:"group,10,rep,name=Group,json=repeatedDelimited" json:"repeated_delimited,omitempty"`
 	MapGroup          map[int32]*Editions_Group `protobuf:"bytes,11,rep,name=map_group,json=mapGroup" json:"map_group,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -150,7 +150,7 @@ const (
 
 func (x *Editions) Reset() {
 	*x = Editions{}
-	mi := &file_jsonwire_test_editions_proto_msgTypes[0]
+	mi := &file_protojsonx_test_editions_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +162,7 @@ func (x *Editions) String() string {
 func (*Editions) ProtoMessage() {}
 
 func (x *Editions) ProtoReflect() protoreflect.Message {
-	mi := &file_jsonwire_test_editions_proto_msgTypes[0]
+	mi := &file_protojsonx_test_editions_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +175,7 @@ func (x *Editions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Editions.ProtoReflect.Descriptor instead.
 func (*Editions) Descriptor() ([]byte, []int) {
-	return file_jsonwire_test_editions_proto_rawDescGZIP(), []int{0}
+	return file_protojsonx_test_editions_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Editions) GetRequiredInt32() int32 {
@@ -327,7 +327,7 @@ type Editions_Group struct {
 
 func (x *Editions_Group) Reset() {
 	*x = Editions_Group{}
-	mi := &file_jsonwire_test_editions_proto_msgTypes[1]
+	mi := &file_protojsonx_test_editions_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +339,7 @@ func (x *Editions_Group) String() string {
 func (*Editions_Group) ProtoMessage() {}
 
 func (x *Editions_Group) ProtoReflect() protoreflect.Message {
-	mi := &file_jsonwire_test_editions_proto_msgTypes[1]
+	mi := &file_protojsonx_test_editions_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +352,7 @@ func (x *Editions_Group) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Editions_Group.ProtoReflect.Descriptor instead.
 func (*Editions_Group) Descriptor() ([]byte, []int) {
-	return file_jsonwire_test_editions_proto_rawDescGZIP(), []int{0, 0}
+	return file_protojsonx_test_editions_proto_rawDescGZIP(), []int{0, 0}
 }
 
 func (x *Editions_Group) GetValue() int32 {
@@ -369,75 +369,75 @@ func (x *Editions_Group) GetName() string {
 	return ""
 }
 
-var file_jsonwire_test_editions_proto_extTypes = []protoimpl.ExtensionInfo{
+var file_protojsonx_test_editions_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*Editions)(nil),
 		ExtensionType: (*int32)(nil),
 		Field:         100,
-		Name:          "jsonwire.test.ext_int32",
+		Name:          "protojsonx.test.ext_int32",
 		Tag:           "varint,100,opt,name=ext_int32",
-		Filename:      "jsonwire/test/editions.proto",
+		Filename:      "protojsonx/test/editions.proto",
 	},
 	{
 		ExtendedType:  (*Editions)(nil),
 		ExtensionType: (*Editions_Group)(nil),
 		Field:         101,
-		Name:          "jsonwire.test.ext_group",
+		Name:          "protojsonx.test.ext_group",
 		Tag:           "group,101,opt,name=Group",
-		Filename:      "jsonwire/test/editions.proto",
+		Filename:      "protojsonx/test/editions.proto",
 	},
 	{
 		ExtendedType:  (*Editions)(nil),
 		ExtensionType: ([]string)(nil),
 		Field:         102,
-		Name:          "jsonwire.test.ext_strings",
+		Name:          "protojsonx.test.ext_strings",
 		Tag:           "bytes,102,rep,name=ext_strings",
-		Filename:      "jsonwire/test/editions.proto",
+		Filename:      "protojsonx/test/editions.proto",
 	},
 }
 
 // Extension fields to Editions.
 var (
 	// optional int32 ext_int32 = 100;
-	E_ExtInt32 = &file_jsonwire_test_editions_proto_extTypes[0]
-	// optional jsonwire.test.Editions.Group ext_group = 101;
-	E_ExtGroup = &file_jsonwire_test_editions_proto_extTypes[1]
+	E_ExtInt32 = &file_protojsonx_test_editions_proto_extTypes[0]
+	// optional protojsonx.test.Editions.Group ext_group = 101;
+	E_ExtGroup = &file_protojsonx_test_editions_proto_extTypes[1]
 	// repeated string ext_strings = 102;
-	E_ExtStrings = &file_jsonwire_test_editions_proto_extTypes[2]
+	E_ExtStrings = &file_protojsonx_test_editions_proto_extTypes[2]
 )
 
-var File_jsonwire_test_editions_proto protoreflect.FileDescriptor
+var File_protojsonx_test_editions_proto protoreflect.FileDescriptor
 
-const file_jsonwire_test_editions_proto_rawDesc = "" +
+const file_protojsonx_test_editions_proto_rawDesc = "" +
 	"\n" +
-	"\x1cjsonwire/test/editions.proto\x12\rjsonwire.test\"\x9d\t\n" +
+	"\x1eprotojsonx/test/editions.proto\x12\x0fprotojsonx.test\"\xb3\t\n" +
 	"\bEditions\x12,\n" +
-	"\x0erequired_int32\x18\x01 \x01(\x05B\x05\xaa\x01\x02\b\x03R\rrequiredInt32\x12O\n" +
-	"\x10required_message\x18\x02 \x01(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02\b\x03R\x0frequiredMessage\x12%\n" +
+	"\x0erequired_int32\x18\x01 \x01(\x05B\x05\xaa\x01\x02\b\x03R\rrequiredInt32\x12Q\n" +
+	"\x10required_message\x18\x02 \x01(\v2\x1f.protojsonx.test.Editions.GroupB\x05\xaa\x01\x02\b\x03R\x0frequiredMessage\x12%\n" +
 	"\x0eexplicit_int32\x18\x03 \x01(\x05R\rexplicitInt32\x12,\n" +
 	"\x0eimplicit_int32\x18\x04 \x01(\x05B\x05\xaa\x01\x02\b\x02R\rimplicitInt32\x12,\n" +
-	"\x0edefault_string\x18\x05 \x01(\t:\x05helloR\rdefaultString\x12?\n" +
-	"\vclosed_enum\x18\x06 \x01(\x0e2\x1e.jsonwire.test.Editions.ClosedR\n" +
-	"closedEnum\x12G\n" +
-	"\x0frepeated_closed\x18\a \x03(\x0e2\x1e.jsonwire.test.Editions.ClosedR\x0erepeatedClosed\x129\n" +
-	"\topen_enum\x18\b \x01(\x0e2\x1c.jsonwire.test.Editions.OpenR\bopenEnum\x12B\n" +
-	"\tdelimited\x18\t \x01(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\tdelimited\x12S\n" +
+	"\x0edefault_string\x18\x05 \x01(\t:\x05helloR\rdefaultString\x12A\n" +
+	"\vclosed_enum\x18\x06 \x01(\x0e2 .protojsonx.test.Editions.ClosedR\n" +
+	"closedEnum\x12I\n" +
+	"\x0frepeated_closed\x18\a \x03(\x0e2 .protojsonx.test.Editions.ClosedR\x0erepeatedClosed\x12;\n" +
+	"\topen_enum\x18\b \x01(\x0e2\x1e.protojsonx.test.Editions.OpenR\bopenEnum\x12D\n" +
+	"\tdelimited\x18\t \x01(\v2\x1f.protojsonx.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\tdelimited\x12U\n" +
 	"\x12repeated_delimited\x18\n" +
-	" \x03(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\x11repeatedDelimited\x12B\n" +
-	"\tmap_group\x18\v \x03(\v2%.jsonwire.test.Editions.MapGroupEntryR\bmapGroup\x12\x1f\n" +
+	" \x03(\v2\x1f.protojsonx.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\x11repeatedDelimited\x12D\n" +
+	"\tmap_group\x18\v \x03(\v2'.protojsonx.test.Editions.MapGroupEntryR\bmapGroup\x12\x1f\n" +
 	"\vcustom_json\x18\f \x01(\tR\n" +
 	"customJSON\x12\x1f\n" +
 	"\n" +
-	"choice_int\x18\r \x01(\x05H\x00R\tchoiceInt\x12B\n" +
-	"\fchoice_group\x18\x0e \x01(\v2\x1d.jsonwire.test.Editions.GroupH\x00R\vchoiceGroup\x125\n" +
-	"\trecursive\x18\x0f \x01(\v2\x17.jsonwire.test.EditionsR\trecursive\x12:\n" +
-	"\x05group\x18\x10 \x01(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\x05group\x1a1\n" +
+	"choice_int\x18\r \x01(\x05H\x00R\tchoiceInt\x12D\n" +
+	"\fchoice_group\x18\x0e \x01(\v2\x1f.protojsonx.test.Editions.GroupH\x00R\vchoiceGroup\x127\n" +
+	"\trecursive\x18\x0f \x01(\v2\x19.protojsonx.test.EditionsR\trecursive\x12<\n" +
+	"\x05group\x18\x10 \x01(\v2\x1f.protojsonx.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\x05group\x1a1\n" +
 	"\x05Group\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\x05R\x05value\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x1aZ\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x1a\\\n" +
 	"\rMapGroupEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\x05R\x03key\x123\n" +
-	"\x05value\x18\x02 \x01(\v2\x1d.jsonwire.test.Editions.GroupR\x05value:\x028\x01\"(\n" +
+	"\x03key\x18\x01 \x01(\x05R\x03key\x125\n" +
+	"\x05value\x18\x02 \x01(\v2\x1f.protojsonx.test.Editions.GroupR\x05value:\x028\x01\"(\n" +
 	"\x04Open\x12\x14\n" +
 	"\x10OPEN_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
@@ -445,50 +445,50 @@ const file_jsonwire_test_editions_proto_rawDesc = "" +
 	"\x06Closed\x12\f\n" +
 	"\bCLOSED_A\x10\x01\x12\f\n" +
 	"\bCLOSED_B\x10\x02\x1a\x04:\x02\x10\x02*\x05\bd\x10\xc8\x01B\b\n" +
-	"\x06choice:4\n" +
-	"\text_int32\x12\x17.jsonwire.test.Editions\x18d \x01(\x05R\bextInt32:Z\n" +
-	"\text_group\x12\x17.jsonwire.test.Editions\x18e \x01(\v2\x1d.jsonwire.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\bextGroup:8\n" +
-	"\vext_strings\x12\x17.jsonwire.test.Editions\x18f \x03(\tR\n" +
-	"extStringsB\xb5\x01\n" +
-	"\x11com.jsonwire.testB\rEditionsProtoP\x01Z<github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test\xa2\x02\x03JTX\xaa\x02\rJsonwire.Test\xca\x02\rJsonwire\\Test\xe2\x02\x19Jsonwire\\Test\\GPBMetadata\xea\x02\x0eJsonwire::Testb\beditionsp\xe8\a"
+	"\x06choice:6\n" +
+	"\text_int32\x12\x19.protojsonx.test.Editions\x18d \x01(\x05R\bextInt32:^\n" +
+	"\text_group\x12\x19.protojsonx.test.Editions\x18e \x01(\v2\x1f.protojsonx.test.Editions.GroupB\x05\xaa\x01\x02(\x02R\bextGroup::\n" +
+	"\vext_strings\x12\x19.protojsonx.test.Editions\x18f \x03(\tR\n" +
+	"extStringsB\xc3\x01\n" +
+	"\x13com.protojsonx.testB\rEditionsProtoP\x01Z@github.com/protolayer/protojsonx-go/internal/gen/protojsonx/test\xa2\x02\x03PTX\xaa\x02\x0fProtojsonx.Test\xca\x02\x0fProtojsonx\\Test\xe2\x02\x1bProtojsonx\\Test\\GPBMetadata\xea\x02\x10Protojsonx::Testb\beditionsp\xe8\a"
 
 var (
-	file_jsonwire_test_editions_proto_rawDescOnce sync.Once
-	file_jsonwire_test_editions_proto_rawDescData []byte
+	file_protojsonx_test_editions_proto_rawDescOnce sync.Once
+	file_protojsonx_test_editions_proto_rawDescData []byte
 )
 
-func file_jsonwire_test_editions_proto_rawDescGZIP() []byte {
-	file_jsonwire_test_editions_proto_rawDescOnce.Do(func() {
-		file_jsonwire_test_editions_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_jsonwire_test_editions_proto_rawDesc), len(file_jsonwire_test_editions_proto_rawDesc)))
+func file_protojsonx_test_editions_proto_rawDescGZIP() []byte {
+	file_protojsonx_test_editions_proto_rawDescOnce.Do(func() {
+		file_protojsonx_test_editions_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_protojsonx_test_editions_proto_rawDesc), len(file_protojsonx_test_editions_proto_rawDesc)))
 	})
-	return file_jsonwire_test_editions_proto_rawDescData
+	return file_protojsonx_test_editions_proto_rawDescData
 }
 
-var file_jsonwire_test_editions_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_jsonwire_test_editions_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_jsonwire_test_editions_proto_goTypes = []any{
-	(Editions_Open)(0),     // 0: jsonwire.test.Editions.Open
-	(Editions_Closed)(0),   // 1: jsonwire.test.Editions.Closed
-	(*Editions)(nil),       // 2: jsonwire.test.Editions
-	(*Editions_Group)(nil), // 3: jsonwire.test.Editions.Group
-	nil,                    // 4: jsonwire.test.Editions.MapGroupEntry
+var file_protojsonx_test_editions_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_protojsonx_test_editions_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_protojsonx_test_editions_proto_goTypes = []any{
+	(Editions_Open)(0),     // 0: protojsonx.test.Editions.Open
+	(Editions_Closed)(0),   // 1: protojsonx.test.Editions.Closed
+	(*Editions)(nil),       // 2: protojsonx.test.Editions
+	(*Editions_Group)(nil), // 3: protojsonx.test.Editions.Group
+	nil,                    // 4: protojsonx.test.Editions.MapGroupEntry
 }
-var file_jsonwire_test_editions_proto_depIdxs = []int32{
-	3,  // 0: jsonwire.test.Editions.required_message:type_name -> jsonwire.test.Editions.Group
-	1,  // 1: jsonwire.test.Editions.closed_enum:type_name -> jsonwire.test.Editions.Closed
-	1,  // 2: jsonwire.test.Editions.repeated_closed:type_name -> jsonwire.test.Editions.Closed
-	0,  // 3: jsonwire.test.Editions.open_enum:type_name -> jsonwire.test.Editions.Open
-	3,  // 4: jsonwire.test.Editions.delimited:type_name -> jsonwire.test.Editions.Group
-	3,  // 5: jsonwire.test.Editions.repeated_delimited:type_name -> jsonwire.test.Editions.Group
-	4,  // 6: jsonwire.test.Editions.map_group:type_name -> jsonwire.test.Editions.MapGroupEntry
-	3,  // 7: jsonwire.test.Editions.choice_group:type_name -> jsonwire.test.Editions.Group
-	2,  // 8: jsonwire.test.Editions.recursive:type_name -> jsonwire.test.Editions
-	3,  // 9: jsonwire.test.Editions.group:type_name -> jsonwire.test.Editions.Group
-	3,  // 10: jsonwire.test.Editions.MapGroupEntry.value:type_name -> jsonwire.test.Editions.Group
-	2,  // 11: jsonwire.test.ext_int32:extendee -> jsonwire.test.Editions
-	2,  // 12: jsonwire.test.ext_group:extendee -> jsonwire.test.Editions
-	2,  // 13: jsonwire.test.ext_strings:extendee -> jsonwire.test.Editions
-	3,  // 14: jsonwire.test.ext_group:type_name -> jsonwire.test.Editions.Group
+var file_protojsonx_test_editions_proto_depIdxs = []int32{
+	3,  // 0: protojsonx.test.Editions.required_message:type_name -> protojsonx.test.Editions.Group
+	1,  // 1: protojsonx.test.Editions.closed_enum:type_name -> protojsonx.test.Editions.Closed
+	1,  // 2: protojsonx.test.Editions.repeated_closed:type_name -> protojsonx.test.Editions.Closed
+	0,  // 3: protojsonx.test.Editions.open_enum:type_name -> protojsonx.test.Editions.Open
+	3,  // 4: protojsonx.test.Editions.delimited:type_name -> protojsonx.test.Editions.Group
+	3,  // 5: protojsonx.test.Editions.repeated_delimited:type_name -> protojsonx.test.Editions.Group
+	4,  // 6: protojsonx.test.Editions.map_group:type_name -> protojsonx.test.Editions.MapGroupEntry
+	3,  // 7: protojsonx.test.Editions.choice_group:type_name -> protojsonx.test.Editions.Group
+	2,  // 8: protojsonx.test.Editions.recursive:type_name -> protojsonx.test.Editions
+	3,  // 9: protojsonx.test.Editions.group:type_name -> protojsonx.test.Editions.Group
+	3,  // 10: protojsonx.test.Editions.MapGroupEntry.value:type_name -> protojsonx.test.Editions.Group
+	2,  // 11: protojsonx.test.ext_int32:extendee -> protojsonx.test.Editions
+	2,  // 12: protojsonx.test.ext_group:extendee -> protojsonx.test.Editions
+	2,  // 13: protojsonx.test.ext_strings:extendee -> protojsonx.test.Editions
+	3,  // 14: protojsonx.test.ext_group:type_name -> protojsonx.test.Editions.Group
 	15, // [15:15] is the sub-list for method output_type
 	15, // [15:15] is the sub-list for method input_type
 	14, // [14:15] is the sub-list for extension type_name
@@ -496,12 +496,12 @@ var file_jsonwire_test_editions_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_jsonwire_test_editions_proto_init() }
-func file_jsonwire_test_editions_proto_init() {
-	if File_jsonwire_test_editions_proto != nil {
+func init() { file_protojsonx_test_editions_proto_init() }
+func file_protojsonx_test_editions_proto_init() {
+	if File_protojsonx_test_editions_proto != nil {
 		return
 	}
-	file_jsonwire_test_editions_proto_msgTypes[0].OneofWrappers = []any{
+	file_protojsonx_test_editions_proto_msgTypes[0].OneofWrappers = []any{
 		(*Editions_ChoiceInt)(nil),
 		(*Editions_ChoiceGroup)(nil),
 	}
@@ -509,19 +509,19 @@ func file_jsonwire_test_editions_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_jsonwire_test_editions_proto_rawDesc), len(file_jsonwire_test_editions_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_protojsonx_test_editions_proto_rawDesc), len(file_protojsonx_test_editions_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   3,
 			NumExtensions: 3,
 			NumServices:   0,
 		},
-		GoTypes:           file_jsonwire_test_editions_proto_goTypes,
-		DependencyIndexes: file_jsonwire_test_editions_proto_depIdxs,
-		EnumInfos:         file_jsonwire_test_editions_proto_enumTypes,
-		MessageInfos:      file_jsonwire_test_editions_proto_msgTypes,
-		ExtensionInfos:    file_jsonwire_test_editions_proto_extTypes,
+		GoTypes:           file_protojsonx_test_editions_proto_goTypes,
+		DependencyIndexes: file_protojsonx_test_editions_proto_depIdxs,
+		EnumInfos:         file_protojsonx_test_editions_proto_enumTypes,
+		MessageInfos:      file_protojsonx_test_editions_proto_msgTypes,
+		ExtensionInfos:    file_protojsonx_test_editions_proto_extTypes,
 	}.Build()
-	File_jsonwire_test_editions_proto = out.File
-	file_jsonwire_test_editions_proto_goTypes = nil
-	file_jsonwire_test_editions_proto_depIdxs = nil
+	File_protojsonx_test_editions_proto = out.File
+	file_protojsonx_test_editions_proto_goTypes = nil
+	file_protojsonx_test_editions_proto_depIdxs = nil
 }

@@ -16,10 +16,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
-	"github.com/protolayer/jsonwire-go/internal/gen/editions/golden"
-	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
+	"github.com/protolayer/protojsonx-go/internal/gen/conformance/test_protos"
+	"github.com/protolayer/protojsonx-go/internal/gen/editions/golden"
+	testpb "github.com/protolayer/protojsonx-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/protojsonx-go/internal/gen/protojsonx/test"
 )
 
 // Messages are the message types that the tests use. They cover proto2,
@@ -47,7 +47,7 @@ var Messages = []func() proto.Message{
 
 // Generator fills messages with random values. Most values are valid, but some
 // are not, for example strings with invalid UTF-8 or timestamps out of range.
-// For those values, both protojson and jsonwire must return an error.
+// For those values, both protojson and protojsonx must return an error.
 type Generator struct {
 	r *rand.Rand
 	// invalid is the chance (0 to 1) of a value that cannot be marshaled.

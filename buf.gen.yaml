@@ -3,7 +3,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/protolayer/jsonwire-go/internal/gen
+      value: github.com/protolayer/protojsonx-go/internal/gen
 plugins:
   # Build protoc-gen-go from the tool directive in go.mod, so that its version
   # matches the protobuf runtime.

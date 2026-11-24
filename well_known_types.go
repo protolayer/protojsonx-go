@@ -5,7 +5,7 @@
 // This file is a port of google.golang.org/protobuf/encoding/protojson to
 // encoding/json/jsontext.
 
-package jsonwire
+package protojsonx
 
 import (
 	"bytes"

@@ -12,14 +12,14 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/protolayer/jsonwire-go"
-	"github.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos"
-	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
+	"github.com/protolayer/protojsonx-go"
+	"github.com/protolayer/protojsonx-go/internal/gen/conformance/test_protos"
+	testpb "github.com/protolayer/protojsonx-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/protojsonx-go/internal/gen/protojsonx/test"
 )
 
 // edgeInputs are JSON inputs that test the parts of the ProtoJSON format that
-// random messages do not reach. jsonwire and protojson must agree on each of
+// random messages do not reach. protojsonx and protojson must agree on each of
 // them: both return an error, or both return the same message.
 var edgeInputs = []string{
 	// Syntax.
@@ -217,9 +217,9 @@ var edgeInputsEditions = []string{
 	`{"mapGroup":{"1":{"value":1},"-1":{}}}`, `{"mapGroup":{"x":{}}}`,
 	`{"customJSON":"x"}`, `{"custom_json":"x"}`, `{"customJson":"x"}`, `{"customJSON":"x","custom_json":"y"}`,
 	`{"choiceInt":1,"choiceGroup":{}}`, `{"choiceGroup":{"value":1}}`, `{"choiceInt":null,"choiceGroup":{}}`,
-	`{"[jsonwire.test.ext_int32]":1}`, `{"[jsonwire.test.ext_group]":{"value":1}}`, `{"[jsonwire.test.ext_strings]":["a"]}`,
-	`{"[jsonwire.test.ext_int32]":1,"[jsonwire.test.ext_int32]":2}`, `{"[jsonwire.test.unknown_ext]":1}`,
-	`{"[jsonwire.test.Editions.ext_int32]":1}`, `{"[protobuf_test_messages.editions.extension_int32]":1}`,
+	`{"[protojsonx.test.ext_int32]":1}`, `{"[protojsonx.test.ext_group]":{"value":1}}`, `{"[protojsonx.test.ext_strings]":["a"]}`,
+	`{"[protojsonx.test.ext_int32]":1,"[protojsonx.test.ext_int32]":2}`, `{"[protojsonx.test.unknown_ext]":1}`,
+	`{"[protojsonx.test.Editions.ext_int32]":1}`, `{"[protobuf_test_messages.editions.extension_int32]":1}`,
 	`{"recursive":{"requiredInt32":1,"requiredMessage":{}}}`, `{"recursive":{"recursive":{}}}`,
 }
 
@@ -286,14 +286,14 @@ var hugeExponentInputs = map[string]bool{
 	`{"optionalInt64":"0e-2147483648"}`: true,
 }
 
-// TestHugeExponents checks huge exponents with jsonwire on all platforms. It
+// TestHugeExponents checks huge exponents with protojsonx on all platforms. It
 // compares with protojson only on 64-bit platforms, where protojson does not
 // run out of memory.
 func TestHugeExponents(t *testing.T) {
 	t.Parallel()
 	newMessage := func() proto.Message { return new(testpb.TestAllTypesProto3) }
 	for input, valid := range hugeExponentInputs {
-		err := jsonwire.Unmarshal([]byte(input), newMessage())
+		err := protojsonx.Unmarshal([]byte(input), newMessage())
 		if (err == nil) != valid {
 			t.Errorf("Unmarshal(%s): got error %v, want valid=%v", input, err, valid)
 		}
@@ -358,7 +358,7 @@ func TestInvalidMessages(t *testing.T) {
 		for _, c := range marshalCases {
 			checkMarshal(t, m, c)
 		}
-		if _, err := jsonwire.Marshal(m); err != nil {
+		if _, err := protojsonx.Marshal(m); err != nil {
 			t.Errorf("Marshal(%v): %v", m, err)
 		}
 	}
@@ -366,7 +366,7 @@ func TestInvalidMessages(t *testing.T) {
 		for _, c := range marshalCases {
 			checkMarshal(t, m, c)
 		}
-		if _, err := jsonwire.Marshal(m); err == nil {
+		if _, err := protojsonx.Marshal(m); err == nil {
 			t.Errorf("Marshal(%v): want error", m)
 		}
 	}

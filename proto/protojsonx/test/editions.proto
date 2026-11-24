@@ -1,6 +1,6 @@
 edition = "2023";
 
-package jsonwire.test;
+package protojsonx.test;
 
 // Editions covers the editions features that the conformance test messages do
 // not cover: required fields, closed enums, explicit and implicit presence,

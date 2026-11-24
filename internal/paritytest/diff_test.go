@@ -12,117 +12,117 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/protolayer/jsonwire-go"
-	"github.com/protolayer/jsonwire-go/internal/testutil"
+	"github.com/protolayer/protojsonx-go"
+	"github.com/protolayer/protojsonx-go/internal/testutil"
 )
 
-// The tests in this file compare jsonwire with protojson, which is the
+// The tests in this file compare protojsonx with protojson, which is the
 // reference implementation. For each input, both must return an error, or both
 // must return the same result.
 
 type marshalCase struct {
-	name      string
-	protojson protojson.MarshalOptions
-	jsonwire  jsonwire.MarshalOptions
+	name       string
+	protojson  protojson.MarshalOptions
+	protojsonx protojsonx.MarshalOptions
 }
 
 var marshalCases = []marshalCase{
 	{name: "default"},
 	{
-		name:      "UseProtoNames",
-		protojson: protojson.MarshalOptions{UseProtoNames: true},
-		jsonwire:  jsonwire.MarshalOptions{UseProtoNames: true},
+		name:       "UseProtoNames",
+		protojson:  protojson.MarshalOptions{UseProtoNames: true},
+		protojsonx: protojsonx.MarshalOptions{UseProtoNames: true},
 	},
 	{
-		name:      "UseEnumNumbers",
-		protojson: protojson.MarshalOptions{UseEnumNumbers: true},
-		jsonwire:  jsonwire.MarshalOptions{UseEnumNumbers: true},
+		name:       "UseEnumNumbers",
+		protojson:  protojson.MarshalOptions{UseEnumNumbers: true},
+		protojsonx: protojsonx.MarshalOptions{UseEnumNumbers: true},
 	},
 	{
-		name:      "EmitUnpopulated",
-		protojson: protojson.MarshalOptions{EmitUnpopulated: true},
-		jsonwire:  jsonwire.MarshalOptions{EmitUnpopulated: true},
+		name:       "EmitUnpopulated",
+		protojson:  protojson.MarshalOptions{EmitUnpopulated: true},
+		protojsonx: protojsonx.MarshalOptions{EmitUnpopulated: true},
 	},
 	{
-		name:      "EmitDefaultValues",
-		protojson: protojson.MarshalOptions{EmitDefaultValues: true},
-		jsonwire:  jsonwire.MarshalOptions{EmitDefaultValues: true},
+		name:       "EmitDefaultValues",
+		protojson:  protojson.MarshalOptions{EmitDefaultValues: true},
+		protojsonx: protojsonx.MarshalOptions{EmitDefaultValues: true},
 	},
 	{
-		name:      "EmitUnpopulatedAndDefaultValues",
-		protojson: protojson.MarshalOptions{EmitUnpopulated: true, EmitDefaultValues: true},
-		jsonwire:  jsonwire.MarshalOptions{EmitUnpopulated: true, EmitDefaultValues: true},
+		name:       "EmitUnpopulatedAndDefaultValues",
+		protojson:  protojson.MarshalOptions{EmitUnpopulated: true, EmitDefaultValues: true},
+		protojsonx: protojsonx.MarshalOptions{EmitUnpopulated: true, EmitDefaultValues: true},
 	},
 	{
-		name:      "AllowPartial",
-		protojson: protojson.MarshalOptions{AllowPartial: true},
-		jsonwire:  jsonwire.MarshalOptions{AllowPartial: true},
+		name:       "AllowPartial",
+		protojson:  protojson.MarshalOptions{AllowPartial: true},
+		protojsonx: protojsonx.MarshalOptions{AllowPartial: true},
 	},
 	{
 		name: "AllOptions",
 		protojson: protojson.MarshalOptions{
 			AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true,
 		},
-		jsonwire: jsonwire.MarshalOptions{
+		protojsonx: protojsonx.MarshalOptions{
 			AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true,
 		},
 	},
 	{
-		name:      "Multiline",
-		protojson: protojson.MarshalOptions{Multiline: true},
-		jsonwire:  jsonwire.MarshalOptions{Multiline: true},
+		name:       "Multiline",
+		protojson:  protojson.MarshalOptions{Multiline: true},
+		protojsonx: protojsonx.MarshalOptions{Multiline: true},
 	},
 	{
-		name:      "Indent",
-		protojson: protojson.MarshalOptions{Indent: "\t"},
-		jsonwire:  jsonwire.MarshalOptions{Indent: "\t"},
+		name:       "Indent",
+		protojson:  protojson.MarshalOptions{Indent: "\t"},
+		protojsonx: protojsonx.MarshalOptions{Indent: "\t"},
 	},
 }
 
 type unmarshalCase struct {
-	name      string
-	protojson protojson.UnmarshalOptions
-	jsonwire  jsonwire.UnmarshalOptions
+	name       string
+	protojson  protojson.UnmarshalOptions
+	protojsonx protojsonx.UnmarshalOptions
 }
 
 var unmarshalCases = []unmarshalCase{
 	{name: "default"},
 	{
-		name:      "DiscardUnknown",
-		protojson: protojson.UnmarshalOptions{DiscardUnknown: true},
-		jsonwire:  jsonwire.UnmarshalOptions{DiscardUnknown: true},
+		name:       "DiscardUnknown",
+		protojson:  protojson.UnmarshalOptions{DiscardUnknown: true},
+		protojsonx: protojsonx.UnmarshalOptions{DiscardUnknown: true},
 	},
 	{
-		name:      "AllowPartial",
-		protojson: protojson.UnmarshalOptions{AllowPartial: true},
-		jsonwire:  jsonwire.UnmarshalOptions{AllowPartial: true},
+		name:       "AllowPartial",
+		protojson:  protojson.UnmarshalOptions{AllowPartial: true},
+		protojsonx: protojsonx.UnmarshalOptions{AllowPartial: true},
 	},
 	{
-		name:      "RecursionLimit",
-		protojson: protojson.UnmarshalOptions{RecursionLimit: 3, DiscardUnknown: true},
-		jsonwire:  jsonwire.UnmarshalOptions{RecursionLimit: 3, DiscardUnknown: true},
+		name:       "RecursionLimit",
+		protojson:  protojson.UnmarshalOptions{RecursionLimit: 3, DiscardUnknown: true},
+		protojsonx: protojsonx.UnmarshalOptions{RecursionLimit: 3, DiscardUnknown: true},
 	},
 }
 
-// checkMarshal compares the output of protojson and jsonwire for m. It
+// checkMarshal compares the output of protojson and protojsonx for m. It
 // returns the protojson output, or nil if both return an error.
 func checkMarshal(t testing.TB, m proto.Message, c marshalCase) []byte {
 	t.Helper()
 	want, wantErr := c.protojson.Marshal(m)
-	got, gotErr := c.jsonwire.Marshal(m)
+	got, gotErr := c.protojsonx.Marshal(m)
 	name := m.ProtoReflect().Descriptor().FullName()
 	if (wantErr != nil) != (gotErr != nil) {
-		t.Fatalf("%s: error mismatch for %v\nprotojson: %v\njsonwire:  %v\nprotojson output: %s\njsonwire output:  %s",
+		t.Fatalf("%s: error mismatch for %v\nprotojson: %v\nprotojsonx:  %v\nprotojson output: %s\nprotojsonx output:  %s",
 			c.name, name, wantErr, gotErr, want, got)
 	}
 	if gotErr != nil && !errors.Is(gotErr, proto.Error) {
 		t.Fatalf("%s: error does not match proto.Error: %v", c.name, gotErr)
 	}
 	if wantErr == nil && !bytes.Equal(testutil.Compact(t, want), testutil.Compact(t, got)) {
-		t.Fatalf("%s: output mismatch for %v\nprotojson: %s\njsonwire:  %s",
+		t.Fatalf("%s: output mismatch for %v\nprotojson: %s\nprotojsonx:  %s",
 			c.name, name, testutil.Compact(t, want), testutil.Compact(t, got))
 	}
-	if c.jsonwire.Multiline || c.jsonwire.Indent != "" {
+	if c.protojsonx.Multiline || c.protojsonx.Indent != "" {
 		if wantErr != nil {
 			return nil
 		}
@@ -136,7 +136,7 @@ func checkMarshal(t testing.TB, m proto.Message, c marshalCase) []byte {
 	// proto.Clone does not work for this check, because it drops -0 in
 	// proto3 float fields.
 	if gotErr == nil {
-		again, err := c.jsonwire.Marshal(m)
+		again, err := c.protojsonx.Marshal(m)
 		if err != nil || !bytes.Equal(again, got) {
 			t.Fatalf("%s: output is not deterministic for %v\nfirst:  %s\nsecond: %s (%v)", c.name, name, got, again, err)
 		}
@@ -152,7 +152,7 @@ func checkMarshal(t testing.TB, m proto.Message, c marshalCase) []byte {
 		{"lenient encoder", []jsontext.Options{jsontext.AllowInvalidUTF8(true), jsontext.AllowDuplicateNames(true)}},
 	} {
 		var buf bytes.Buffer
-		err := c.jsonwire.MarshalEncode(jsontext.NewEncoder(&buf, opts.opts...), m)
+		err := c.protojsonx.MarshalEncode(jsontext.NewEncoder(&buf, opts.opts...), m)
 		if (err != nil) != (gotErr != nil) {
 			t.Fatalf("%s: MarshalEncode with %s: error mismatch for %v\nMarshal:       %v\nMarshalEncode: %v",
 				c.name, opts.name, name, gotErr, err)
@@ -174,7 +174,7 @@ func isValidJSON(data []byte) bool {
 	return jsontext.Value(data).IsValid(jsontext.AllowDuplicateNames(true))
 }
 
-// checkUnmarshal compares the result of protojson and jsonwire for data.
+// checkUnmarshal compares the result of protojson and protojsonx for data.
 func checkUnmarshal(t testing.TB, data []byte, newMessage func() proto.Message, c unmarshalCase) {
 	t.Helper()
 	checkUnmarshalWith(t, data, newMessage, c, true)
@@ -187,7 +187,7 @@ func checkUnmarshalWith(t testing.TB, data []byte, newMessage func() proto.Messa
 	want := newMessage()
 	wantErr := c.protojson.Unmarshal(data, want)
 	got := newMessage()
-	gotErr := c.jsonwire.Unmarshal(data, got)
+	gotErr := c.protojsonx.Unmarshal(data, got)
 	name := want.ProtoReflect().Descriptor().FullName()
 	if gotErr != nil && !errors.Is(gotErr, proto.Error) {
 		t.Fatalf("%s: error does not match proto.Error for input %q: %v", c.name, data, gotErr)
@@ -197,21 +197,21 @@ func checkUnmarshalWith(t testing.TB, data []byte, newMessage func() proto.Messa
 	}
 	if !isValidJSON(data) {
 		// protojson accepts some input that is not valid JSON, for example
-		// the number 0E. jsonwire follows RFC 8259 and must reject it.
+		// the number 0E. protojsonx follows RFC 8259 and must reject it.
 		if gotErr == nil {
-			t.Fatalf("%s: jsonwire accepted invalid JSON for %v: %q", c.name, name, data)
+			t.Fatalf("%s: protojsonx accepted invalid JSON for %v: %q", c.name, name, data)
 		}
 		return
 	}
 	if (wantErr != nil) != (gotErr != nil) {
-		t.Fatalf("%s: error mismatch for %v with input %q\nprotojson: %v\njsonwire:  %v",
+		t.Fatalf("%s: error mismatch for %v with input %q\nprotojson: %v\nprotojsonx:  %v",
 			c.name, name, data, wantErr, gotErr)
 	}
 	if wantErr != nil {
 		return
 	}
 	if !proto.Equal(want, got) {
-		t.Fatalf("%s: result mismatch for %v with input %q\nprotojson: %v\njsonwire:  %v",
+		t.Fatalf("%s: result mismatch for %v with input %q\nprotojson: %v\nprotojsonx:  %v",
 			c.name, name, data, want, got)
 	}
 }
@@ -230,7 +230,7 @@ func checkUnmarshalVariants(t testing.TB, data []byte, newMessage func() proto.M
 
 	input := bytes.Clone(data)
 	scribbled := newMessage()
-	err := c.jsonwire.Unmarshal(input, scribbled)
+	err := c.protojsonx.Unmarshal(input, scribbled)
 	for i := range input {
 		input[i] = 'x'
 	}
@@ -274,7 +274,7 @@ func checkUnmarshalVariants(t testing.TB, data []byte, newMessage func() proto.M
 func unmarshalDecodeAll(c unmarshalCase, data []byte, newMessage func() proto.Message, opts ...jsontext.Options) (proto.Message, error) {
 	m := newMessage()
 	dec := jsontext.NewDecoder(bytes.NewReader(data), opts...)
-	if err := c.jsonwire.UnmarshalDecode(dec, m); err != nil {
+	if err := c.protojsonx.UnmarshalDecode(dec, m); err != nil {
 		return m, err
 	}
 	if _, err := dec.ReadToken(); !errors.Is(err, io.EOF) {
@@ -290,9 +290,9 @@ func unmarshalDecodeAll(c unmarshalCase, data []byte, newMessage func() proto.Me
 func checkUnmarshalRead(t testing.TB, data []byte, newMessage func() proto.Message, c unmarshalCase) {
 	t.Helper()
 	got := newMessage()
-	gotErr := c.jsonwire.Unmarshal(data, got)
+	gotErr := c.protojsonx.Unmarshal(data, got)
 	slow := newMessage()
-	slowErr := c.jsonwire.UnmarshalRead(iotest.OneByteReader(bytes.NewReader(data)), slow)
+	slowErr := c.protojsonx.UnmarshalRead(iotest.OneByteReader(bytes.NewReader(data)), slow)
 	name := got.ProtoReflect().Descriptor().FullName()
 	if (gotErr != nil) != (slowErr != nil) {
 		t.Fatalf("%s: error mismatch for %v with input %q\nUnmarshal:     %v\nUnmarshalRead: %v",
@@ -347,7 +347,7 @@ func TestDifferentialMarshal(t *testing.T) {
 					size += len(out)
 					// Multiline output has the same content as compact
 					// output, so it does not need its own decode checks.
-					if c.jsonwire.Multiline || c.jsonwire.Indent != "" {
+					if c.protojsonx.Multiline || c.protojsonx.Indent != "" {
 						continue
 					}
 					// The output of each marshal option must also unmarshal
@@ -374,7 +374,7 @@ func TestDifferentialMarshal(t *testing.T) {
 	}
 }
 
-// TestDifferentialRoundTrip checks that jsonwire reads its own output back to
+// TestDifferentialRoundTrip checks that protojsonx reads its own output back to
 // the same message.
 func TestDifferentialRoundTrip(t *testing.T) {
 	t.Parallel()
@@ -387,14 +387,14 @@ func TestDifferentialRoundTrip(t *testing.T) {
 			for range iterations {
 				m := newMessage()
 				g.Message(m.ProtoReflect(), 0)
-				b, err := jsonwire.MarshalOptions{AllowPartial: true}.Marshal(m)
+				b, err := protojsonx.MarshalOptions{AllowPartial: true}.Marshal(m)
 				if err != nil {
 					// Some random values cannot round trip, for example an
 					// unknown number in a closed enum.
 					continue
 				}
 				got := newMessage()
-				if err := (jsonwire.UnmarshalOptions{AllowPartial: true}).Unmarshal(b, got); err != nil {
+				if err := (protojsonx.UnmarshalOptions{AllowPartial: true}).Unmarshal(b, got); err != nil {
 					t.Fatalf("unmarshal own output %s: %v", b, err)
 				}
 				// protojson is the reference for the round trip result. Some
@@ -402,10 +402,10 @@ func TestDifferentialRoundTrip(t *testing.T) {
 				// becomes a string.
 				want := newMessage()
 				if err := (protojson.UnmarshalOptions{AllowPartial: true}).Unmarshal(b, want); err != nil {
-					t.Fatalf("protojson cannot read jsonwire output %s: %v", b, err)
+					t.Fatalf("protojson cannot read protojsonx output %s: %v", b, err)
 				}
 				if !proto.Equal(want, got) {
-					t.Fatalf("round trip mismatch for %s\nprotojson: %v\njsonwire:  %v", b, want, got)
+					t.Fatalf("round trip mismatch for %s\nprotojson: %v\nprotojsonx:  %v", b, want, got)
 				}
 			}
 		})

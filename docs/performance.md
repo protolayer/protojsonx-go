@@ -8,8 +8,8 @@ Compared with `protojson`:
 
 ## Why it is faster
 
-- **One pass.** Inside `encoding/json`, `protojson` encodes to a separate `[]byte` that `encoding/json` then validates and copies. On unmarshal, the JSON is parsed twice. `jsonwire` streams directly through `jsontext` and parses once.
-- **Faster JSON engine.** `jsonwire` uses `jsontext` from `encoding/json/v2` instead of `protojson`'s older JSON parser and formatter.
+- **One pass.** Inside `encoding/json`, `protojson` encodes to a separate `[]byte` that `encoding/json` then validates and copies. On unmarshal, the JSON is parsed twice. `protojsonx` streams directly through `jsontext` and parses once.
+- **Faster JSON engine.** `protojsonx` uses `jsontext` from `encoding/json/v2` instead of `protojson`'s older JSON parser and formatter.
 - **Fewer allocations.** Numbers, bytes, durations, and timestamps write directly into the encoder buffer, and small encoder states are reused between calls.
 
 ## Benchmarks
@@ -21,7 +21,7 @@ Benchmarks use `TestAllTypesProto3` from the protobuf conformance suite ([proto]
 
 "In a struct" wraps the message as a field of a Go struct handled by `encoding/json/v2`.
 
-| Benchmark | `protojson` | `jsonwire` | Change | Allocations |
+| Benchmark | `protojson` | `protojsonx` | Change | Allocations |
 | --- | ---: | ---: | ---: | ---: |
 | Marshal, small | 3.10 us | 2.74 us | -12% | 32 -> 8 |
 | Marshal, large | 22.0 us | 16.9 us | -23% | 269 -> 92 |
@@ -36,11 +36,11 @@ Medians of 10 runs on an Apple M4 Pro, Go 1.27.4, `-cpu=1`. Run `make bench` to 
 
 ### Other shapes
 
-`BenchmarkShapes` also tests lists, packed numbers, dynamic messages, `Any`, large `bytes` fields, and 1 MB strings. `jsonwire` is faster for typical structured messages. For messages dominated by a single large string (especially non-ASCII text or heavy escaping) or unmarshaling a large `bytes` field, `protojson` can be faster on one CPU. Benchmark with your own payloads if your traffic looks like that.
+`BenchmarkShapes` also tests lists, packed numbers, dynamic messages, `Any`, large `bytes` fields, and 1 MB strings. `protojsonx` is faster for typical structured messages. For messages dominated by a single large string (especially non-ASCII text or heavy escaping) or unmarshaling a large `bytes` field, `protojson` can be faster on one CPU. Benchmark with your own payloads if your traffic looks like that.
 
 ## Tuning
 
-`encoding/json/v2` checks every JSON object for duplicate names by default, which adds noticeable overhead on large messages. `jsonwire` already rejects duplicate protobuf fields and map keys, so you can disable the outer check:
+`encoding/json/v2` checks every JSON object for duplicate names by default, which adds noticeable overhead on large messages. `protojsonx` already rejects duplicate protobuf fields and map keys, so you can disable the outer check:
 
 ```go
 b, err := json.Marshal(v, jsontext.AllowDuplicateNames(true))

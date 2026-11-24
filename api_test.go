@@ -1,4 +1,4 @@
-package jsonwire_test
+package protojsonx_test
 
 import (
 	"bytes"
@@ -26,10 +26,10 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/protolayer/jsonwire-go"
-	testpb "github.com/protolayer/jsonwire-go/internal/gen/google/protobuf"
-	editionspb "github.com/protolayer/jsonwire-go/internal/gen/jsonwire/test"
-	"github.com/protolayer/jsonwire-go/internal/testutil"
+	"github.com/protolayer/protojsonx-go"
+	testpb "github.com/protolayer/protojsonx-go/internal/gen/google/protobuf"
+	editionspb "github.com/protolayer/protojsonx-go/internal/gen/protojsonx/test"
+	"github.com/protolayer/protojsonx-go/internal/testutil"
 )
 
 func newTestMessage() *testpb.TestAllTypesProto3 {
@@ -52,7 +52,7 @@ func TestMarshalMatchesProtojson(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := jsonwire.Marshal(m)
+	got, err := protojsonx.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,14 +63,14 @@ func TestMarshalMatchesProtojson(t *testing.T) {
 
 func TestMarshalNil(t *testing.T) {
 	t.Parallel()
-	got, err := jsonwire.Marshal(nil)
+	got, err := protojsonx.Marshal(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if string(got) != "{}" {
 		t.Fatalf("got %s, want {}", got)
 	}
-	got, err = jsonwire.Marshal((*testpb.TestAllTypesProto3)(nil))
+	got, err = protojsonx.Marshal((*testpb.TestAllTypesProto3)(nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,10 +82,10 @@ func TestMarshalNil(t *testing.T) {
 func TestMarshalWrite(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	if err := jsonwire.MarshalWrite(&buf, newTestMessage()); err != nil {
+	if err := protojsonx.MarshalWrite(&buf, newTestMessage()); err != nil {
 		t.Fatal(err)
 	}
-	want, err := jsonwire.Marshal(newTestMessage())
+	want, err := protojsonx.Marshal(newTestMessage())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,16 +95,16 @@ func TestMarshalWrite(t *testing.T) {
 
 	// Errors before writing leave the writer untouched.
 	buf.Reset()
-	if err := (jsonwire.MarshalOptions{Indent: "x"}).MarshalWrite(&buf, newTestMessage()); err == nil || buf.Len() != 0 {
+	if err := (protojsonx.MarshalOptions{Indent: "x"}).MarshalWrite(&buf, newTestMessage()); err == nil || buf.Len() != 0 {
 		t.Fatalf("invalid indent: err=%v, wrote %q", err, buf.String())
 	}
-	if err := jsonwire.MarshalWrite(&buf, new(editionspb.Editions)); err == nil || buf.Len() != 0 {
+	if err := protojsonx.MarshalWrite(&buf, new(editionspb.Editions)); err == nil || buf.Len() != 0 {
 		t.Fatalf("missing required fields: err=%v, wrote %q", err, buf.String())
 	}
 
 	// Writer errors are returned directly.
 	writeErr := errors.New("write failed")
-	if err := jsonwire.MarshalWrite(failingWriter{err: writeErr}, newTestMessage()); !errors.Is(err, writeErr) {
+	if err := protojsonx.MarshalWrite(failingWriter{err: writeErr}, newTestMessage()); !errors.Is(err, writeErr) {
 		t.Fatalf("failing writer: got %v, want %v", err, writeErr)
 	}
 }
@@ -115,21 +115,21 @@ func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
 
 func TestMarshalIndent(t *testing.T) {
 	t.Parallel()
-	got, err := jsonwire.MarshalOptions{Indent: "\t"}.Marshal(newTestMessage())
+	got, err := protojsonx.MarshalOptions{Indent: "\t"}.Marshal(newTestMessage())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(got), "\n\t\"optionalInt32\": 42") {
 		t.Fatalf("output is not indented with tabs:\n%s", got)
 	}
-	got, err = jsonwire.MarshalOptions{Multiline: true}.Marshal(newTestMessage())
+	got, err = protojsonx.MarshalOptions{Multiline: true}.Marshal(newTestMessage())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(got), "\n  \"optionalInt32\": 42") {
 		t.Fatalf("output is not indented with two spaces:\n%s", got)
 	}
-	_, err = jsonwire.MarshalOptions{Indent: "x"}.Marshal(newTestMessage())
+	_, err = protojsonx.MarshalOptions{Indent: "x"}.Marshal(newTestMessage())
 	if err == nil {
 		t.Fatal("want error for invalid indent")
 	}
@@ -147,7 +147,7 @@ func TestMarshalEncodeStream(t *testing.T) {
 	for i := range 3 {
 		m := newTestMessage()
 		m.OptionalInt32 = int32(i)
-		if err := jsonwire.MarshalEncode(enc, m); err != nil {
+		if err := protojsonx.MarshalEncode(enc, m); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -161,7 +161,7 @@ func TestMarshalEncodeStream(t *testing.T) {
 	}
 	for i := range 3 {
 		var m testpb.TestAllTypesProto3
-		if err := jsonwire.UnmarshalDecode(dec, &m); err != nil {
+		if err := protojsonx.UnmarshalDecode(dec, &m); err != nil {
 			t.Fatal(err)
 		}
 		want := newTestMessage()
@@ -179,7 +179,7 @@ func TestMarshalEncodeUsesEncoderOptions(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
 	enc := jsontext.NewEncoder(&buf, jsontext.Multiline(true))
-	if err := jsonwire.MarshalEncode(enc, newTestMessage()); err != nil {
+	if err := protojsonx.MarshalEncode(enc, newTestMessage()); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(buf.String(), "\n") || strings.Count(buf.String(), "\n") < 5 {
@@ -190,17 +190,17 @@ func TestMarshalEncodeUsesEncoderOptions(t *testing.T) {
 func TestMarshalRequiredFields(t *testing.T) {
 	t.Parallel()
 	m := new(editionspb.Editions)
-	if _, err := jsonwire.Marshal(m); err == nil {
+	if _, err := protojsonx.Marshal(m); err == nil {
 		t.Fatal("want error for missing required fields")
 	}
-	if _, err := (jsonwire.MarshalOptions{AllowPartial: true}).Marshal(m); err != nil {
+	if _, err := (protojsonx.MarshalOptions{AllowPartial: true}).Marshal(m); err != nil {
 		t.Fatalf("AllowPartial: %v", err)
 	}
 	// MarshalEncode checks required fields before it writes, so that enc
 	// does not contain a partial value.
 	var buf bytes.Buffer
 	enc := jsontext.NewEncoder(&buf)
-	if err := jsonwire.MarshalEncode(enc, m); err == nil {
+	if err := protojsonx.MarshalEncode(enc, m); err == nil {
 		t.Fatal("want error for missing required fields")
 	}
 	if buf.Len() != 0 || enc.OutputOffset() != 0 {
@@ -213,10 +213,10 @@ func TestUnmarshalTrailingData(t *testing.T) {
 	inputs := []string{`{} {}`, `{}x`, `{}]`, `{"optionalInt32":1} 1`}
 	for _, input := range inputs {
 		var m testpb.TestAllTypesProto3
-		if err := jsonwire.Unmarshal([]byte(input), &m); err == nil {
+		if err := protojsonx.Unmarshal([]byte(input), &m); err == nil {
 			t.Errorf("Unmarshal(%q): want error", input)
 		}
-		if err := jsonwire.UnmarshalRead(strings.NewReader(input), &m); err == nil {
+		if err := protojsonx.UnmarshalRead(strings.NewReader(input), &m); err == nil {
 			t.Errorf("UnmarshalRead(%q): want error", input)
 		}
 	}
@@ -224,7 +224,7 @@ func TestUnmarshalTrailingData(t *testing.T) {
 	dec := jsontext.NewDecoder(strings.NewReader(`{"optionalInt32":1} {"optionalInt32":2}`))
 	for want := int32(1); want <= 2; want++ {
 		var m testpb.TestAllTypesProto3
-		if err := jsonwire.UnmarshalDecode(dec, &m); err != nil {
+		if err := protojsonx.UnmarshalDecode(dec, &m); err != nil {
 			t.Fatal(err)
 		}
 		if m.GetOptionalInt32() != want {
@@ -239,7 +239,7 @@ func TestUnmarshalTrailingData(t *testing.T) {
 func TestUnmarshalResetsMessage(t *testing.T) {
 	t.Parallel()
 	m := newTestMessage()
-	if err := jsonwire.Unmarshal([]byte(`{"optionalBool":true}`), m); err != nil {
+	if err := protojsonx.Unmarshal([]byte(`{"optionalBool":true}`), m); err != nil {
 		t.Fatal(err)
 	}
 	if !proto.Equal(m, &testpb.TestAllTypesProto3{OptionalBool: true}) {
@@ -260,10 +260,10 @@ func TestUTF8IsAlwaysChecked(t *testing.T) {
 		{RepeatedString: []string{"ok", "\xed\xa0\x80"}},
 	} {
 		var buf bytes.Buffer
-		if err := jsonwire.MarshalEncode(jsontext.NewEncoder(&buf, lenient), m); err == nil {
+		if err := protojsonx.MarshalEncode(jsontext.NewEncoder(&buf, lenient), m); err == nil {
 			t.Errorf("MarshalEncode(%v) with lenient encoder: want error, got %q", m, buf.String())
 		}
-		if _, err := jsonwire.Marshal(m); err == nil {
+		if _, err := protojsonx.Marshal(m); err == nil {
 			t.Errorf("Marshal(%v): want error", m)
 		}
 	}
@@ -277,16 +277,16 @@ func TestUTF8IsAlwaysChecked(t *testing.T) {
 	} {
 		var m testpb.TestAllTypesProto3
 		dec := jsontext.NewDecoder(strings.NewReader(input), lenient)
-		if err := jsonwire.UnmarshalDecode(dec, &m); err == nil {
+		if err := protojsonx.UnmarshalDecode(dec, &m); err == nil {
 			t.Errorf("UnmarshalDecode(%q) with lenient decoder: want error, got %v", input, &m)
 		}
-		if err := jsonwire.Unmarshal([]byte(input), &m); err == nil {
+		if err := protojsonx.Unmarshal([]byte(input), &m); err == nil {
 			t.Errorf("Unmarshal(%q): want error", input)
 		}
 	}
 
 	// Invalid UTF-8 in a skipped unknown field is also rejected under a lenient decoder.
-	discardOpts := jsonwire.UnmarshalOptions{DiscardUnknown: true}
+	discardOpts := protojsonx.UnmarshalOptions{DiscardUnknown: true}
 	for _, input := range []string{
 		"{\"unknown\":\"bad \xff\"}",
 		"{\"unknown\":[\"ok\",{\"nested\":\"\xff\"}]}",
@@ -303,7 +303,7 @@ func TestUTF8IsAlwaysChecked(t *testing.T) {
 	const replacement = "\ufffd"
 	validMsg := &testpb.TestAllTypesProto3{OptionalString: replacement}
 	var buf bytes.Buffer
-	if err := jsonwire.MarshalEncode(jsontext.NewEncoder(&buf, lenient), validMsg); err != nil {
+	if err := protojsonx.MarshalEncode(jsontext.NewEncoder(&buf, lenient), validMsg); err != nil {
 		t.Fatalf("MarshalEncode(U+FFFD) with lenient encoder: %v", err)
 	}
 	for _, input := range []string{
@@ -312,7 +312,7 @@ func TestUTF8IsAlwaysChecked(t *testing.T) {
 	} {
 		var m testpb.TestAllTypesProto3
 		dec := jsontext.NewDecoder(strings.NewReader(input), lenient)
-		if err := jsonwire.UnmarshalDecode(dec, &m); err != nil {
+		if err := protojsonx.UnmarshalDecode(dec, &m); err != nil {
 			t.Fatalf("UnmarshalDecode(%q) with lenient decoder: %v", input, err)
 		}
 		if m.OptionalString != replacement {
@@ -327,13 +327,13 @@ func TestRecursionLimit(t *testing.T) {
 		return []byte(strings.Repeat(`{"recursiveMessage":`, depth) + "{}" + strings.Repeat("}", depth))
 	}
 	var m testpb.TestAllTypesProto3
-	if err := (jsonwire.UnmarshalOptions{RecursionLimit: 5}).Unmarshal(nested(4), &m); err != nil {
+	if err := (protojsonx.UnmarshalOptions{RecursionLimit: 5}).Unmarshal(nested(4), &m); err != nil {
 		t.Fatalf("depth 4 with limit 5: %v", err)
 	}
-	if err := (jsonwire.UnmarshalOptions{RecursionLimit: 5}).Unmarshal(nested(5), &m); err == nil {
+	if err := (protojsonx.UnmarshalOptions{RecursionLimit: 5}).Unmarshal(nested(5), &m); err == nil {
 		t.Fatal("depth 5 with limit 5: want error")
 	}
-	if err := jsonwire.Unmarshal(nested(9000), &m); err != nil {
+	if err := protojsonx.Unmarshal(nested(9000), &m); err != nil {
 		t.Fatalf("depth 9000 with default limit: %v", err)
 	}
 }
@@ -351,7 +351,7 @@ func TestNestingLimit(t *testing.T) {
 	if err := protojson.Unmarshal(input, new(testpb.TestAllTypesProto3)); err != nil {
 		t.Fatalf("protojson: %v", err)
 	}
-	if err := jsonwire.Unmarshal(input, new(testpb.TestAllTypesProto3)); err == nil {
+	if err := protojsonx.Unmarshal(input, new(testpb.TestAllTypesProto3)); err == nil {
 		t.Error("Unmarshal through a list: want error at 10003 JSON levels")
 	}
 	var throughList testpb.TestAllTypesProto3
@@ -361,7 +361,7 @@ func TestNestingLimit(t *testing.T) {
 	if _, err := protojson.Marshal(&throughList); err != nil {
 		t.Fatalf("protojson: %v", err)
 	}
-	if _, err := jsonwire.Marshal(&throughList); err == nil {
+	if _, err := protojsonx.Marshal(&throughList); err == nil {
 		t.Error("Marshal through a list: want error at 10003 JSON levels")
 	}
 
@@ -372,13 +372,13 @@ func TestNestingLimit(t *testing.T) {
 		}
 		return root
 	}
-	if _, err := jsonwire.Marshal(nested(10000)); err != nil {
+	if _, err := protojsonx.Marshal(nested(10000)); err != nil {
 		t.Errorf("Marshal of 10000 levels: %v", err)
 	}
 	if _, err := protojson.Marshal(nested(10001)); err != nil {
 		t.Fatalf("protojson: %v", err)
 	}
-	if _, err := jsonwire.Marshal(nested(10001)); err == nil {
+	if _, err := protojsonx.Marshal(nested(10001)); err == nil {
 		t.Error("Marshal of 10001 levels: want error")
 	}
 }
@@ -393,13 +393,13 @@ var streamCalls atomic.Int64
 
 func (s *streamMessage) MarshalJSONTo(enc *jsontext.Encoder) error {
 	streamCalls.Add(1)
-	return jsonwire.MarshalEncode(enc, s.msg)
+	return protojsonx.MarshalEncode(enc, s.msg)
 }
 
 func (s *streamMessage) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 	streamCalls.Add(1)
 	s.msg = new(testpb.TestAllTypesProto3)
-	return jsonwire.UnmarshalDecode(dec, s.msg)
+	return protojsonx.UnmarshalDecode(dec, s.msg)
 }
 
 type container struct {
@@ -505,8 +505,8 @@ func TestResolverGetsOwnedNames(t *testing.T) {
 	input := `{"[a.b.c]":1,` +
 		strings.Repeat(`"unknown":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",`, 1000) +
 		`"optionalInt32":1}`
-	for name, unmarshal := range map[string]func(jsonwire.UnmarshalOptions, proto.Message) error{
-		"Unmarshal": func(o jsonwire.UnmarshalOptions, m proto.Message) error {
+	for name, unmarshal := range map[string]func(protojsonx.UnmarshalOptions, proto.Message) error{
+		"Unmarshal": func(o protojsonx.UnmarshalOptions, m proto.Message) error {
 			b := []byte(input)
 			err := o.Unmarshal(b, m)
 			for i := range b {
@@ -514,12 +514,12 @@ func TestResolverGetsOwnedNames(t *testing.T) {
 			}
 			return err
 		},
-		"UnmarshalRead": func(o jsonwire.UnmarshalOptions, m proto.Message) error {
+		"UnmarshalRead": func(o protojsonx.UnmarshalOptions, m proto.Message) error {
 			return o.UnmarshalRead(iotest.OneByteReader(strings.NewReader(input)), m)
 		},
 	} {
 		r := &retainingResolver{Types: new(protoregistry.Types)}
-		opts := jsonwire.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true, Resolver: r}
+		opts := protojsonx.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true, Resolver: r}
 		if err := unmarshal(opts, new(editionspb.Editions)); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -533,17 +533,17 @@ func TestUnmarshalEmptyInput(t *testing.T) {
 	t.Parallel()
 	for _, input := range []string{"", " ", "\n\t"} {
 		var m testpb.TestAllTypesProto3
-		err := jsonwire.Unmarshal([]byte(input), &m)
+		err := protojsonx.Unmarshal([]byte(input), &m)
 		if !errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) {
 			t.Errorf("Unmarshal(%q): got %v, want io.ErrUnexpectedEOF", input, err)
 		}
-		err = jsonwire.UnmarshalRead(strings.NewReader(input), &m)
+		err = protojsonx.UnmarshalRead(strings.NewReader(input), &m)
 		if !errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) {
 			t.Errorf("UnmarshalRead(%q): got %v, want io.ErrUnexpectedEOF", input, err)
 		}
 		// At the end of a stream, UnmarshalDecode returns io.EOF, the same
 		// as json.UnmarshalDecode.
-		err = jsonwire.UnmarshalDecode(jsontext.NewDecoder(strings.NewReader(input)), &m)
+		err = protojsonx.UnmarshalDecode(jsontext.NewDecoder(strings.NewReader(input)), &m)
 		if !errors.Is(err, io.EOF) {
 			t.Errorf("UnmarshalDecode(%q): got %v, want io.EOF", input, err)
 		}
@@ -552,7 +552,7 @@ func TestUnmarshalEmptyInput(t *testing.T) {
 
 // TestNestedAnyMemory checks that nested Any values do not copy their input
 // at each level. Each level of Any holds the binary form of all inner levels,
-// so the memory grows with the square of the depth in both packages. jsonwire
+// so the memory grows with the square of the depth in both packages. protojsonx
 // must not use more than protojson. Before the fix, it used about 3 times more.
 func TestNestedAnyMemory(t *testing.T) {
 	if testutil.RaceEnabled {
@@ -572,16 +572,16 @@ func TestNestedAnyMemory(t *testing.T) {
 			}
 		}).AllocedBytesPerOp()
 	}
-	got := allocated(jsonwire.Unmarshal)
+	got := allocated(protojsonx.Unmarshal)
 	want := allocated(protojson.Unmarshal)
-	t.Logf("nested Any depth %d (%d KB input): jsonwire %d MB, protojson %d MB",
+	t.Logf("nested Any depth %d (%d KB input): protojsonx %d MB, protojson %d MB",
 		depth, len(input)>>10, got>>20, want>>20)
 	if got > want {
-		t.Fatalf("jsonwire allocated %d MB, more than protojson (%d MB)", got>>20, want>>20)
+		t.Fatalf("protojsonx allocated %d MB, more than protojson (%d MB)", got>>20, want>>20)
 	}
 }
 
-// TestEncodingJSONEscaping checks that json v1 escapes jsonwire output the
+// TestEncodingJSONEscaping checks that json v1 escapes protojsonx output the
 // same way as the output of MarshalJSON with protojson. v1 escapes <, >, &,
 // U+2028, and U+2029.
 func TestEncodingJSONEscaping(t *testing.T) {
@@ -647,13 +647,13 @@ func TestConcurrentUse(t *testing.T) {
 		wg.Go(func() {
 			for i := range 50 {
 				k := (w + i) % len(messages)
-				got, err := jsonwire.Marshal(messages[k])
+				got, err := protojsonx.Marshal(messages[k])
 				if err != nil || !bytes.Equal(got, inputs[k]) {
 					t.Errorf("Marshal %d: %v\ngot  %s\nwant %s", k, err, got, inputs[k])
 					return
 				}
 				var m testpb.TestAllTypesProto3
-				if err := jsonwire.Unmarshal(inputs[k], &m); err != nil || !proto.Equal(&m, decoded[k]) {
+				if err := protojsonx.Unmarshal(inputs[k], &m); err != nil || !proto.Equal(&m, decoded[k]) {
 					t.Errorf("Unmarshal %d: %v", k, err)
 					return
 				}
@@ -666,11 +666,11 @@ func TestConcurrentUse(t *testing.T) {
 func TestMarshalAppendAndFormat(t *testing.T) {
 	t.Parallel()
 	m := newTestMessage()
-	want, err := jsonwire.Marshal(m)
+	want, err := protojsonx.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := jsonwire.MarshalOptions{}.MarshalAppend([]byte("prefix:"), m)
+	got, err := protojsonx.MarshalOptions{}.MarshalAppend([]byte("prefix:"), m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -688,22 +688,22 @@ func TestMarshalAppendAndFormat(t *testing.T) {
 		{"", new(editionspb.Editions)},
 		{"x", m},
 	} {
-		got, err := jsonwire.MarshalOptions{Indent: c.indent}.MarshalAppend([]byte("prefix:"), c.m)
+		got, err := protojsonx.MarshalOptions{Indent: c.indent}.MarshalAppend([]byte("prefix:"), c.m)
 		if err == nil || got != nil {
 			t.Errorf("MarshalAppend(%v) with indent %q: got %q, %v; want nil and an error", c.m, c.indent, got, err)
 		}
 	}
-	if got := (jsonwire.MarshalOptions{}).Format(nil); got != "<nil>" {
+	if got := (protojsonx.MarshalOptions{}).Format(nil); got != "<nil>" {
 		t.Fatalf("Format(nil): got %q", got)
 	}
-	if got := (jsonwire.MarshalOptions{}).Format((*testpb.TestAllTypesProto3)(nil)); got != "<nil>" {
+	if got := (protojsonx.MarshalOptions{}).Format((*testpb.TestAllTypesProto3)(nil)); got != "<nil>" {
 		t.Fatalf("Format(typed nil): got %q", got)
 	}
 	// Format ignores missing required fields.
-	if got := (jsonwire.MarshalOptions{}).Format(new(editionspb.Editions)); got != "{}" {
+	if got := (protojsonx.MarshalOptions{}).Format(new(editionspb.Editions)); got != "{}" {
 		t.Fatalf("Format(missing required fields): got %q", got)
 	}
-	if got := (jsonwire.MarshalOptions{}).Format(m); got != string(want) {
+	if got := (protojsonx.MarshalOptions{}).Format(m); got != string(want) {
 		t.Fatalf("Format: got %s, want %s", got, want)
 	}
 }
@@ -793,12 +793,12 @@ func TestDescriptorNamesAreChecked(t *testing.T) {
 	if _, err := protojson.Marshal(m); err == nil {
 		t.Fatal("protojson accepted the name; update this test")
 	}
-	if _, err := jsonwire.Marshal(m); err == nil {
+	if _, err := protojsonx.Marshal(m); err == nil {
 		t.Error("Marshal: want error")
 	}
 	var buf bytes.Buffer
 	enc := jsontext.NewEncoder(&buf, jsontext.AllowInvalidUTF8(true))
-	if err := jsonwire.MarshalEncode(enc, m); err == nil {
+	if err := protojsonx.MarshalEncode(enc, m); err == nil {
 		t.Errorf("MarshalEncode with lenient encoder: want error, got %q", buf.String())
 	}
 }
@@ -868,11 +868,11 @@ func TestExtensionWithoutRange(t *testing.T) {
 		for _, c := range []struct {
 			name     string
 			protoOpt protojson.MarshalOptions
-			wireOpt  jsonwire.MarshalOptions
+			wireOpt  protojsonx.MarshalOptions
 		}{
-			{"default", protojson.MarshalOptions{}, jsonwire.MarshalOptions{}},
-			{"EmitUnpopulated", protojson.MarshalOptions{EmitUnpopulated: true}, jsonwire.MarshalOptions{EmitUnpopulated: true}},
-			{"EmitDefaultValues", protojson.MarshalOptions{EmitDefaultValues: true}, jsonwire.MarshalOptions{EmitDefaultValues: true}},
+			{"default", protojson.MarshalOptions{}, protojsonx.MarshalOptions{}},
+			{"EmitUnpopulated", protojson.MarshalOptions{EmitUnpopulated: true}, protojsonx.MarshalOptions{EmitUnpopulated: true}},
+			{"EmitDefaultValues", protojson.MarshalOptions{EmitDefaultValues: true}, protojsonx.MarshalOptions{EmitDefaultValues: true}},
 		} {
 			want, err := c.protoOpt.Marshal(m)
 			if err != nil {
@@ -913,7 +913,7 @@ func rejectsEarly(t *testing.T, r io.Reader, m proto.Message) {
 	t.Helper()
 	done := make(chan error, 1)
 	go func() {
-		done <- jsonwire.UnmarshalRead(r, m)
+		done <- protojsonx.UnmarshalRead(r, m)
 	}()
 	select {
 	case err := <-done:
@@ -948,8 +948,8 @@ func TestScalarRejectsContainerEarly(t *testing.T) {
 func TestPackageFormat(t *testing.T) {
 	t.Parallel()
 	m := newTestMessage()
-	want := jsonwire.MarshalOptions{Multiline: true}.Format(m)
-	if got := jsonwire.Format(m); got != want || !strings.Contains(got, "\n") {
+	want := protojsonx.MarshalOptions{Multiline: true}.Format(m)
+	if got := protojsonx.Format(m); got != want || !strings.Contains(got, "\n") {
 		t.Fatalf("Format: got %q, want %q", got, want)
 	}
 }
@@ -969,9 +969,9 @@ func TestResolverNotFoundIsExact(t *testing.T) {
 	input := []byte(`{"[a.b]":1}`)
 	r := wrappingResolver{Types: new(protoregistry.Types)}
 	wantErr := protojson.UnmarshalOptions{DiscardUnknown: true, Resolver: r}.Unmarshal(input, new(editionspb.Editions))
-	gotErr := jsonwire.UnmarshalOptions{DiscardUnknown: true, Resolver: r}.Unmarshal(input, new(editionspb.Editions))
+	gotErr := protojsonx.UnmarshalOptions{DiscardUnknown: true, Resolver: r}.Unmarshal(input, new(editionspb.Editions))
 	if wantErr == nil || gotErr == nil {
-		t.Fatalf("want errors from both, got protojson %v, jsonwire %v", wantErr, gotErr)
+		t.Fatalf("want errors from both, got protojson %v, protojsonx %v", wantErr, gotErr)
 	}
 }
 
@@ -982,7 +982,7 @@ func TestMarshalOutputIsOwned(t *testing.T) {
 	for _, size := range []int{100, 100 << 10, 2 << 20} {
 		first := &testpb.TestAllTypesProto3{OptionalBytes: bytes.Repeat([]byte{1}, size)}
 		second := &testpb.TestAllTypesProto3{OptionalBytes: bytes.Repeat([]byte{2}, size)}
-		a, err := jsonwire.Marshal(first)
+		a, err := protojsonx.Marshal(first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -990,21 +990,21 @@ func TestMarshalOutputIsOwned(t *testing.T) {
 		// Write into the spare capacity, which must not be shared either.
 		_ = append(a[:len(a):cap(a)], "garbage"...)
 		for range 10 {
-			if _, err := jsonwire.Marshal(second); err != nil {
+			if _, err := protojsonx.Marshal(second); err != nil {
 				t.Fatal(err)
 			}
 			var buf bytes.Buffer
-			if err := jsonwire.MarshalWrite(&buf, second); err != nil {
+			if err := protojsonx.MarshalWrite(&buf, second); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := (jsonwire.MarshalOptions{}).MarshalAppend(nil, second); err != nil {
+			if _, err := (protojsonx.MarshalOptions{}).MarshalAppend(nil, second); err != nil {
 				t.Fatal(err)
 			}
 		}
 		if !bytes.Equal(a, want) {
 			t.Fatalf("size %d: output changed after later Marshal calls", size)
 		}
-		if again, _ := jsonwire.Marshal(first); !bytes.Equal(again, want) {
+		if again, _ := protojsonx.Marshal(first); !bytes.Equal(again, want) {
 			t.Fatalf("size %d: output of the same message changed", size)
 		}
 	}
@@ -1031,11 +1031,11 @@ func TestAnyValuesAreOwned(t *testing.T) {
 			t.Fatal(err)
 		}
 		var read testpb.TestAllTypesProto3
-		if err := jsonwire.UnmarshalRead(iotest.OneByteReader(bytes.NewReader(in)), &read); err != nil {
+		if err := protojsonx.UnmarshalRead(iotest.OneByteReader(bytes.NewReader(in)), &read); err != nil {
 			t.Fatal(err)
 		}
 		var m testpb.TestAllTypesProto3
-		if err := jsonwire.Unmarshal(in, &m); err != nil {
+		if err := protojsonx.Unmarshal(in, &m); err != nil {
 			t.Fatal(err)
 		}
 		// The message must not refer to the input either.
@@ -1067,7 +1067,7 @@ func TestDuplicateNamesInAny(t *testing.T) {
 			`"value":{"a":1,"a":2}}}}`,
 		prefix + `protobuf_test_messages.proto3.TestAllTypesProto3","unknown":1,"unknown":2}}`,
 	} {
-		opts := jsonwire.UnmarshalOptions{DiscardUnknown: true}
+		opts := protojsonx.UnmarshalOptions{DiscardUnknown: true}
 		strict := jsontext.NewDecoder(strings.NewReader(input))
 		if err := opts.UnmarshalDecode(strict, new(testpb.TestAllTypesProto3)); err == nil {
 			t.Errorf("%s: strict decoder: want error", input)
@@ -1108,7 +1108,7 @@ func TestManyFields(t *testing.T) {
 		want := dynamicpb.NewMessage(fd.Messages().Get(0))
 		got := dynamicpb.NewMessage(fd.Messages().Get(0))
 		wantErr := protojson.Unmarshal([]byte(input), want)
-		gotErr := jsonwire.Unmarshal([]byte(input), got)
+		gotErr := protojsonx.Unmarshal([]byte(input), got)
 		if (gotErr == nil) != (wantErr == nil) || (gotErr == nil && !proto.Equal(got, want)) {
 			t.Errorf("%s: got %v, %v; protojson: %v, %v", input, got, gotErr, want, wantErr)
 		}

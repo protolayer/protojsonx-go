@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 //
-// Modified for jsonwire: the message_set_wire_format option is removed.
+// Modified for protojsonx: the message_set_wire_format option is removed.
 //
 // Test schema for proto2 messages.  This test schema is used by:
 //
@@ -3684,8 +3684,8 @@ const file_google_protobuf_test_messages_proto2_proto_rawDesc = "" +
 	"\n" +
 	"groupfield\x121.protobuf_test_messages.proto2.TestAllTypesProto2\x18y \x01(\n" +
 	"2).protobuf_test_messages.proto2.GroupFieldR\n" +
-	"groupfieldB\x8e\x02\n" +
-	"!com.protobuf_test_messages.proto2B\x17TestMessagesProto2ProtoH\x01P\x01Z>github.com/protolayer/jsonwire-go/internal/gen/google/protobuf\xf8\x01\x01\xa2\x02\x03PPX\xaa\x02\x1bProtobufTestMessages.Proto2\xca\x02\x1bProtobufTestMessages\\Proto2\xe2\x02'ProtobufTestMessages\\Proto2\\GPBMetadata\xea\x02\x1cProtobufTestMessages::Proto2"
+	"groupfieldB\x90\x02\n" +
+	"!com.protobuf_test_messages.proto2B\x17TestMessagesProto2ProtoH\x01P\x01Z@github.com/protolayer/protojsonx-go/internal/gen/google/protobuf\xf8\x01\x01\xa2\x02\x03PPX\xaa\x02\x1bProtobufTestMessages.Proto2\xca\x02\x1bProtobufTestMessages\\Proto2\xe2\x02'ProtobufTestMessages\\Proto2\\GPBMetadata\xea\x02\x1cProtobufTestMessages::Proto2"
 
 var (
 	file_google_protobuf_test_messages_proto2_proto_rawDescOnce sync.Once

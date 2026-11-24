@@ -6,7 +6,7 @@
 #     The proto2 files have one change: the message_set_wire_format option is
 #     removed, so that code generation does not need the protolegacy build
 #     tag.
-#   - proto/jsonwire has test protos of this module.
+#   - proto/protojsonx has test protos of this module.
 version: v2
 modules:
   - path: proto

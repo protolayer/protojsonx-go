@@ -6,10 +6,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/protolayer/jsonwire-go/internal/testutil"
+	"github.com/protolayer/protojsonx-go/internal/testutil"
 )
 
-// FuzzUnmarshal checks that jsonwire and protojson agree on any input.
+// FuzzUnmarshal checks that protojsonx and protojson agree on any input.
 func FuzzUnmarshal(f *testing.F) {
 	for _, input := range edgeInputs {
 		f.Add([]byte(input), uint8(0))
@@ -41,7 +41,7 @@ func FuzzUnmarshal(f *testing.F) {
 	})
 }
 
-// FuzzMarshal checks that jsonwire and protojson write the same JSON for any
+// FuzzMarshal checks that protojsonx and protojson write the same JSON for any
 // message that the binary format can describe.
 func FuzzMarshal(f *testing.F) {
 	g := testutil.NewGenerator(43)

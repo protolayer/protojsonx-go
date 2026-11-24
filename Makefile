@@ -17,7 +17,7 @@ fuzz:
 		go test -run='^$$' -fuzz="^$${target}$$" -fuzztime=$(FUZZTIME) -fuzzminimizetime=10s ./internal/paritytest || exit 1; \
 	done
 
-# Coverage of the jsonwire package from all tests, including the parity
+# Coverage of the protojsonx package from all tests, including the parity
 # tests in internal/paritytest.
 .PHONY: cover
 cover:
@@ -40,7 +40,7 @@ lint:
 
 .PHONY: conformance
 conformance:
-	scripts/conformance.sh jsonwire
+	scripts/conformance.sh protojsonx
 
 .PHONY: conformance-baseline
 conformance-baseline:

@@ -3,9 +3,9 @@
 # Runs the protobuf conformance test suite against the conformance testee in
 # internal/cmd/conformance.
 #
-# Usage: scripts/conformance.sh [jsonwire|protojson]
+# Usage: scripts/conformance.sh [protojsonx|protojson]
 #
-# The argument selects the ProtoJSON implementation (default: jsonwire). Use
+# The argument selects the ProtoJSON implementation (default: protojsonx). Use
 # protojson to compare with upstream. Any failure fails the run.
 #
 # The runner is a prebuilt linux/amd64 binary. On other platforms, the script
@@ -21,7 +21,7 @@ readonly RUNNER_SHA256="f55d56f1db31cd0aca9af9877fe55e80f9cb507cb343df223ed1dbcb
 readonly CONTAINER_IMAGE="ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5"
 
 main() {
-  local impl="${1:-jsonwire}"
+  local impl="${1:-protojsonx}"
   local root_dir
   root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   local cache_dir="${root_dir}/.cache/conformance"
@@ -40,7 +40,7 @@ main() {
   if [[ "$(uname -s)" == "Linux" && "$(uname -m)" == "x86_64" ]]; then
     (
       cd "${bin_dir}"
-      JSONWIRE_CONFORMANCE_IMPL="${impl}" \
+      PROTOJSONX_CONFORMANCE_IMPL="${impl}" \
         ./conformance_test_runner \
         --enforce_recommended \
         --maximum_edition 2023 \
@@ -49,7 +49,7 @@ main() {
     )
   else
     docker run --rm --platform linux/amd64 \
-      --env "JSONWIRE_CONFORMANCE_IMPL=${impl}" \
+      --env "PROTOJSONX_CONFORMANCE_IMPL=${impl}" \
       --volume "${bin_dir}:/conformance/bin:ro" \
       --volume "${out_dir}:/conformance/out" \
       --workdir /conformance/bin \

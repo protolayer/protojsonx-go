@@ -1,4 +1,4 @@
-// Package testutil has helpers for the jsonwire tests: a random message
+// Package testutil has helpers for the protojsonx tests: a random message
 // generator, the test message types, and small helpers.
 package testutil
 

@@ -4,7 +4,7 @@
 //
 // This file is a port of google.golang.org/protobuf/internal/encoding/json.
 
-package jsonwire
+package protojsonx
 
 import (
 	"strconv"

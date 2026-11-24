@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 //
-// Modified for jsonwire: the message_set_wire_format option is removed.
+// Modified for protojsonx: the message_set_wire_format option is removed.
 //
 // Test schema for proto2 messages.  This test schema is used by:
 //

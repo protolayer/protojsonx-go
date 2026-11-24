@@ -1535,8 +1535,8 @@ const file_conformance_test_protos_test_messages_edition2023_proto_rawDesc = "" 
 	"\vFOREIGN_BAZ\x10\x02:a\n" +
 	"\x0fextension_int32\x128.protobuf_test_messages.editions.TestAllTypesEdition2023\x18x \x01(\x05R\x0eextensionInt32:\x8e\x01\n" +
 	"\rgroupliketype\x128.protobuf_test_messages.editions.TestAllTypesEdition2023\x18y \x01(\v2..protobuf_test_messages.editions.GroupLikeTypeR\rgroupliketype:\x8d\x01\n" +
-	"\rdelimited_ext\x128.protobuf_test_messages.editions.TestAllTypesEdition2023\x18z \x01(\v2..protobuf_test_messages.editions.GroupLikeTypeR\fdelimitedExtB\xa5\x02\n" +
-	"#com.protobuf_test_messages.editionsB\x1cTestMessagesEdition2023ProtoP\x01ZFgithub.com/protolayer/jsonwire-go/internal/gen/conformance/test_protos\xa2\x02\x03PEX\xaa\x02\x1dProtobufTestMessages.Editions\xca\x02\x1dProtobufTestMessages\\Editions\xe2\x02)ProtobufTestMessages\\Editions\\GPBMetadata\xea\x02\x1eProtobufTestMessages::Editions\x92\x03\x02(\x02b\beditionsp\xe8\a"
+	"\rdelimited_ext\x128.protobuf_test_messages.editions.TestAllTypesEdition2023\x18z \x01(\v2..protobuf_test_messages.editions.GroupLikeTypeR\fdelimitedExtB\xa7\x02\n" +
+	"#com.protobuf_test_messages.editionsB\x1cTestMessagesEdition2023ProtoP\x01ZHgithub.com/protolayer/protojsonx-go/internal/gen/conformance/test_protos\xa2\x02\x03PEX\xaa\x02\x1dProtobufTestMessages.Editions\xca\x02\x1dProtobufTestMessages\\Editions\xe2\x02)ProtobufTestMessages\\Editions\\GPBMetadata\xea\x02\x1eProtobufTestMessages::Editions\x92\x03\x02(\x02b\beditionsp\xe8\a"
 
 var (
 	file_conformance_test_protos_test_messages_edition2023_proto_rawDescOnce sync.Once
